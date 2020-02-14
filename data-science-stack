@@ -1,0 +1,727 @@
+#!/bin/bash
+
+# Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
+
+# Global Paramaters
+STACK_VERSION=2.1.0
+
+MIN_DRIVER=440.33.0
+MIN_CUDA=10.1.243
+MIN_DOCKER=19.03.4
+MIN_CONDA=4.7.12
+
+SCRIPT_NAME=$(basename $0)
+RUNFROM=$(dirname $(readlink -f $0))
+DEFAULT_ENVIRONMENT="data-science-stack"
+
+CONDA_ROOT=${HOME}/conda
+NOTEBOOKS_DIR=${HOME}/data-science-stack-${STACK_VERSION}
+if [ -f /etc/redhat-release ]; then
+  FLAVOR="redhat"
+else
+  FLAVOR="ubuntu"
+fi
+
+PIN_CONTAINER="frolvlad/alpine-miniconda3:python3.7"
+PIN_TMP="tmp.json"
+PIN_OUT="${OUT:-pinned.yaml}"
+
+
+REBOOT=0
+LOGOUT=0
+
+nvlog () {
+  echo "###NV### `date` #### $1"
+}
+
+
+require_user () {
+  if [ $(id -u) = 0 ]; then
+    nvlog "ERROR: Cannot run this step as root, run script as user or without 'sudo'"
+    exit 1
+  fi
+}
+
+semver_gte () {
+  # $1 >= $2 ?
+  [ "$2" != "`echo -e "$1\n$2" | sort -V | head -n1`" ]
+}
+
+
+install_base () {
+  nvlog "START Installing base packages"
+
+  # Install base apt/yum packages needed
+  if [ $FLAVOR = "ubuntu" ]; then
+    sudo apt-get -y update --fix-missing
+    sudo apt-get -y upgrade
+    sudo apt-get -y install --no-install-recommends apt-utils
+    sudo apt-get -y install \
+      curl \
+      font-manager \
+      graphviz \
+      git \
+      gcc \
+      g++ \
+      npm \
+      screen \
+      tzdata \
+      wget \
+      zlib1g-dev
+  else
+    sudo subscription-manager repos --enable rhel-7-workstation-devtools-rpms
+    sudo subscription-manager repos --enable rhel-7-workstation-optional-rpms
+    sudo subscription-manager repos --enable rhel-7-workstation-extras-rpms
+    sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || true
+    sudo yum groups mark convert
+    sudo yum groupinstall -y 'Development Tools'
+    sudo yum install -y \
+      bzip2 \
+      clang \
+      curl \
+      device-mapper-persistent-data \
+      devtoolset-4 \
+      file \
+      git \
+      graphviz \
+      lvm2 \
+      npm \
+      screen \
+      vim \
+      wget \
+      which \
+      yum-utils
+  fi
+
+  nvlog "END Installing base packages"
+}
+
+
+detect_driver () {
+  DRIVER_VER=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2> /dev/null)
+  if [ $? -ne 0 ]; then
+    DRIVER_VER=0
+  fi
+}
+
+
+install_driver () {
+  nvlog "START Installing Driver"
+
+  semver_gte $DRIVER_VER $MIN_DRIVER
+  if [ $? -eq 1 ]; then
+    nvlog "Driver is new enough - skip install"
+    nvlog "END Installing Driver"
+    return
+  fi
+
+  if [ $FLAVOR = "ubuntu" ]; then
+    sudo add-apt-repository -y ppa:graphics-drivers/ppa
+    sudo apt-get -y update
+    sudo apt-get -y upgrade
+    sudo apt-get -y install nvidia-driver-440
+    REBOOT=1
+  else
+    nvlog "Automated NVIDIA driver install on Red Hat is not supported."
+    nvlog "Please install NVIDIA driver $MIN_DRIVER or newer and run again."
+    exit
+  fi
+
+  nvlog "END Installing Driver"
+}
+
+
+purge_driver () {
+  nvlog "START Purge Driver"
+
+  cat << EOF
+
+WARNING:
+Removing the NVIDIA Driver will also remove CUDA and other libraries like
+nvidia-docker2 that depend on the driver.
+
+Helpful once the system is rebooted:
+
+    ${SCRIPT_NAME} setup-system
+
+EOF
+
+  read -p "DANGER: Are you SURE [y/N]?" -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    nvlog "Starting removal..."
+  else
+    nvlog "Aborting - doing nothing"
+  fi
+
+  if [ $FLAVOR = "ubuntu" ]; then
+    sudo apt -y purge nvidia-*
+    sudo apt -y autoremove
+    sudo rm -f /etc/modprobe.d/blacklist-nouveau.conf
+    sudo rm -f /etc/modprobe.d/nvidia-installer-disable-nouveau.conf
+    sudo update-initramfs -k all -u
+    REBOOT=1
+  else
+    nvlog "ERROR: Automated NVIDIA driver purge on Red Hat not supported."
+    exit
+  fi
+
+  nvlog "END Purge Driver"
+}
+
+
+detect_cuda () {
+  if [ -f /usr/local/cuda/version.txt ]; then
+    CUDA_VER=$(cat /usr/local/cuda/version.txt | awk '{ print $3 }' 2> /dev/null)
+    if [ $? -ne 0 ]; then
+      CUDA_VER=0
+    fi
+  else
+    CUDA_VER=0
+  fi
+}
+
+
+install_cuda () {
+  nvlog "START Installing CUDA"
+  semver_gte $CUDA_VER $MIN_CUDA
+  if [ $? -eq 1 ]; then
+    nvlog "CUDA is new enough - skip install"
+    nvlog "END Installing CUDA"
+    return
+  fi
+
+  if [ $FLAVOR = "ubuntu" ]; then
+    curl https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-repo-ubuntu1804_10.1.243-1_amd64.deb \
+     -o cuda-repo.deb
+    sudo dpkg -i cuda-repo.deb
+    sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+    sudo apt-get update
+    sudo apt-get -y install cuda-toolkit-10-1
+    rm -f cuda-repo.deb
+
+    echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+    echo "export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+    source ${HOME}/.bashrc
+  else
+    curl https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-10.1.243-1.x86_64.rpm \
+     -o cuda-repo.rpm
+    sudo rpm -i cuda-repo.rpm || true
+    sudo yum clean all
+    sudo yum install -y cuda-toolkit-10-1
+    rm -f cuda-repo.rpm
+
+    echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+    echo "export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+    source ${HOME}/.bashrc
+  fi
+
+  nvlog "END Installing CUDA"
+}
+
+
+detect_docker () {
+  DOCKER_VER=$(docker version --format '{{.Client.Version}}' 2> /dev/null)
+  if [ $? -ne 0 ]; then
+    DOCKER_VER=0
+  fi
+}
+
+
+install_docker () {
+  nvlog "START Installing Docker and NVIDIA Container Toolkit"
+  semver_gte $DOCKER_VER $MIN_DOCKER
+  if [ $? -eq 1 ]; then
+    nvlog "Docker is new enough, checking for nvidia-docker2..."
+
+    if [ $FLAVOR = "ubuntu" ]; then
+      nvd2=$(dpkg -l | grep nvidia-docker2 | grep ii)
+    else
+      nvd2=$(yum list installed | grep nvidia-docker2)
+    fi
+
+    if [ "$nvd2" != "" ]; then
+      nvlog "nvidia-docker2 found, no install needed"
+      nvlog "END Installing Docker and NVIDIA Container Toolkit"
+      return
+    fi
+  fi
+
+  if [ $FLAVOR = "ubuntu" ]; then
+    # NVIDIA Repo
+    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+    curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+    # Docker Repo
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+    sudo apt-get -y update
+    sudo apt-get -y install \
+      apt-transport-https \
+      ca-certificates \
+      gnupg-agent \
+      software-properties-common
+    sudo apt-get -y install \
+      nvidia-docker2 \
+      docker-ce \
+      docker-ce-cli \
+      containerd.io
+    sudo systemctl enable docker
+    sudo systemctl start docker
+    sudo groupadd -f docker
+    sudo systemctl restart docker
+  else
+    # NVIDIA Repos
+    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.repo | \
+      sudo tee /etc/yum.repos.d/nvidia-docker.repo
+    curl -s -L https://nvidia.github.io/nvidia-container-runtime/$distribution/nvidia-container-runtime.repo | \
+      sudo tee /etc/yum.repos.d/nvidia-container-runtime.repo
+    # Docker Repo
+    sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+    sudo yum install -y \
+      nvidia-docker2 \
+      docker-ce \
+      docker-ce-cli \
+      containerd.io
+    sudo systemctl enable docker
+    sudo systemctl start docker
+    sudo groupadd -f docker
+    sudo systemctl restart docker
+  fi
+
+  nvlog "END Installing Docker and NVIDIA Container Toolkit"
+}
+
+
+docker_adduser () {
+  nvlog "START Add User to Docker Group"
+  if groups $USER | grep -qw '\bdocker\b'; then
+    nvlog "User already member of docker group"
+    nvlog "END Add User to Docker Group"
+    return
+  fi
+
+  nvlog "Adding user '$USER' to docker group"
+  if [ $FLAVOR = "ubuntu" ]; then
+    sudo usermod -aG docker $USER
+    sudo setfacl -m user:$USER:rw /var/run/docker.sock
+    sudo systemctl daemon-reload
+    sudo systemctl reload docker
+  else
+    sudo usermod -aG docker $USER
+    sudo setfacl -m user:$USER:rw /var/run/docker.sock
+    sudo systemctl daemon-reload
+    sudo systemctl reload docker
+  fi
+
+  LOGOUT=1
+
+  nvlog "END Add User to Docker Group"
+}
+
+build_container () {
+  nvlog "START Building Container - env:${ENVIRONMENT_NAME} => ${ENVIRONMENT_NAME}:${STACK_VERSION}"
+
+  TEMPDIR=$(mktemp -d)
+
+  nvlog "Run From: $RUNFROM"
+  nvlog "Temp Directory: $TEMPDIR"
+  cd $TEMPDIR
+  cp -a $RUNFROM/data-science-stack.Dockerfile $RUNFROM/README.md \
+    $TEMPDIR
+  cp -a $RUNFROM/environments/${ENVIRONMENT_NAME}-pinned.yaml $TEMPDIR/environment-pinned.yaml
+  ls -aFl
+  docker build \
+    --tag ${ENVIRONMENT_NAME}:${STACK_VERSION} \
+    -f ./data-science-stack.Dockerfile .
+  rm -r $TEMPDIR
+
+  nvlog "END Building Container"
+}
+
+detect_conda () {
+  CONDA_VER=$(conda --version 2> /dev/null)
+  if [ $? -ne 0 ]; then
+    CONDA_VER=0
+    return
+  fi
+  CONDA_VER=$(echo "$CONDA_VER" | awk '{ print $2 }' 2> /dev/null)
+  CONDA_ROOT=$(dirname $(dirname $(which conda)))
+}
+
+
+install_miniconda () {
+  nvlog "START Install Miniconda"
+
+  semver_gte $CONDA_VER $MIN_CONDA
+  if [ $? -eq 1 ]; then
+    nvlog "Conda is new enough"
+    nvlog "END Install Miniconda"
+    return
+  fi
+
+  if [ -d "${CONDA_ROOT}" ]; then
+    echo "Saving ${CONDA_ROOT} to ${CONDA_ROOT}.bak..."
+    mv ${CONDA_ROOT} ${CONDA_ROOT}.bak
+  fi
+  mkdir -p ${HOME}/.conda
+
+  curl https://repo.anaconda.com/miniconda/Miniconda3-$MIN_CONDA-Linux-x86_64.sh -o miniconda.sh
+  chmod +x miniconda.sh
+  ./miniconda.sh -bf -p ${CONDA_ROOT}  # Use the existing Conda
+
+  echo "export PATH=${CONDA_ROOT}/bin:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+  source ${HOME}/.bashrc
+
+  ${CONDA_ROOT}/bin/conda init bash
+  source ${HOME}/.bashrc
+
+  LOGOUT=1
+
+  nvlog "END Install Miniconda"
+}
+
+
+create_conda_env () {
+  nvlog "START Setup Conda Env - env:${ENVIRONMENT_NAME} => ${ENVIRONMENT_NAME}-${STACK_VERSION}"
+
+  ${CONDA_ROOT}/bin/conda env create -n ${ENVIRONMENT_NAME}-${STACK_VERSION} \
+    -f $RUNFROM/environments/${ENVIRONMENT_NAME}-pinned.yaml
+
+  echo "conda activate ${ENVIRONMENT_NAME}-${STACK_VERSION} # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+  if [ -d ${HOME}/Desktop/ ]; then
+    cp $RUNFROM/README.md ${HOME}/Desktop/data-science-stack-README.md
+  fi
+
+  source ${CONDA_ROOT}/bin/activate ${ENVIRONMENT_NAME}-${STACK_VERSION} ; \
+    pip install jupyterlab-nvdashboard ; \
+    jupyter labextension install -y --clean \
+      @jupyter-widgets/jupyterlab-manager \
+      ipyvolume \
+      jupyter-threejs \
+      dask-labextension \
+      jupyterlab-nvdashboard
+
+  nvlog "END Setup Conda Env"
+}
+
+
+install_notebooks () {
+  nvlog "Start Install Notebooks"
+
+  nvlog "Installing Notebooks to ${NOTEBOOKS_DIR}/"
+  if [ ! -d "${NOTEBOOKS_DIR}" ]; then
+    mkdir -p ${NOTEBOOKS_DIR}
+  else
+    if [ -d "${NOTEBOOKS_DIR}/notebooks" ]; then
+      rm -rf ${NOTEBOOKS_DIR}/notebooks
+    fi
+  fi
+  cd ${NOTEBOOKS_DIR}
+  git clone --recursive --single-branch --depth 1 --branch branch-0.10 https://github.com/rapidsai/notebooks.git
+
+  nvlog "END Install Notebooks"
+}
+
+
+purge_conda () {
+  nvlog "START Remove Conda"
+
+  read -p "DANGER: Are you sure you want to remove ALL of Conda and ALL \
+of NVIDIA Data Science Stack ( ${NOTEBOOKS_DIR} \
+${HOME}/conda ${HOME}/.conda ) [y/N]?" -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    nvlog "Removing Conda and Notebook files"
+    if [ -f ${CONDA_ROOT}/bin/conda ]; then
+      ${CONDA_ROOT}/bin/conda init --reverse
+    fi
+    rm -rf ${NOTEBOOKS_DIR}
+    rm -rf ${HOME}/conda
+    rm -rf ${HOME}/.conda
+    nvlog "Saving ${HOME}/.bashrc to ${HOME}/.bashrc.bak"
+    cp ${HOME}/.bashrc ${HOME}/.bashrc.bak
+    sed -i '/DATA-SCIENCE-STACK-ADDED/d' ${HOME}/.bashrc
+    LOGOUT=1
+  else
+    nvlog "Aborting - no files deleted"
+  fi
+
+  nvlog "END Remove Conda"
+}
+
+
+diagnostics () {
+  nvlog "START Diagnostics"
+
+  nvlog "OS Flavor: $FLAVOR"
+  if [ -f /usr/bin/lsb_release ]; then
+    /usr/bin/lsb_release -a
+  fi
+
+  nvlog "Driver detected: $DRIVER_VER"
+  nvlog "NVIDIA SMI:"
+  if [ -f /usr/bin/nvidia-smi ]; then
+    /usr/bin/nvidia-smi
+  fi
+  nvlog "Shared libraries:"
+  ldconfig -p | grep 'nvidia\|libnv\|cuda\|libcu'
+
+  nvlog "CUDA detected: $CUDA_VER"
+  nvlog "Docker detected: $DOCKER_VER"
+
+  nvlog "Notebooks directory: $NOTEBOOKS_DIR"
+  nvlog "Conda detected: $CONDA_VER"
+  nvlog "Conda root: $CONDA_ROOT"
+  semver_gte $CONDA_VER $MIN_CONDA
+  if [ $? -eq 1 ]; then
+    nvlog "Conda packages:"
+    conda list
+  fi
+
+  nvlog "END Diagnostics"
+}
+
+notify_reboot () {
+  nvlog
+  nvlog
+  nvlog "ACTION REQUIRED:"
+  nvlog "For the changes to take effect, reboot the machine."
+  nvlog
+  nvlog
+}
+
+
+notify_logout () {
+  nvlog
+  nvlog
+  nvlog "ACTION REQUIRED:"
+  nvlog "For the changes to take effect, please logout and login again."
+  nvlog
+  nvlog
+}
+
+
+usage () {
+  cat << EOF
+
+NVIDIA Data Science Stack v${STACK_VERSION}
+
+Usage: ${SCRIPT_NAME} COMMAND
+
+Setup Commands:
+
+    setup-system
+        Setup system to enable NVIDIA Data Science software.
+    setup-user
+        Setup user permissions to use containers.
+
+Containers Commands:
+
+    build-container <environment-name>
+        Build the container version of the stack.
+        Default <environment-name> is "data-science-stack".
+    run-container <environment-name>
+        Run Jupyter in the container.
+        Default <environment-name> is "data-science-stack".
+
+Conda Local Environments Commands:
+
+    build-conda-env <environment-name>
+        Build the Conda environment version of the stack.
+        Default <environment-name> is "data-science-stack".
+    run-jupyter <environment-name>
+        Run Jupyter in the environment.
+        Default <environment-name> is "data-science-stack".
+
+Environment Pinning Commands (for stack maintainers):
+
+    pin <environment-name>
+        Generates a pinned.yaml file based on the
+        "./environments/<environment-name>.env" file.
+        Default <environment-name> is "data-science-stack".
+        See environments/READ.md for more info.
+
+Other Commands:
+
+    version
+        Display version information.
+    diagnostics
+        Display stack sofware versions and info.
+    purge-driver
+        Purge the NVIDIA driver from the system, so it can be reinstalled.
+    purge-conda
+        DANGER: Purge the system of Conda and the software stack.
+
+EOF
+}
+
+(
+detect_driver
+detect_cuda
+detect_docker
+detect_conda
+
+case "$1" in
+  version)
+    echo Version: ${STACK_VERSION}
+    ;;
+
+  diagnostics)
+    require_user
+    diagnostics
+    ;;
+
+  setup-system)
+    nvlog "OS Flavor: $FLAVOR"
+    nvlog "Driver detected: $DRIVER_VER"
+    nvlog "Docker detected: $DOCKER_VER"
+    install_base
+    install_driver
+    install_docker
+    ;;
+
+  setup-user)
+    require_user
+    docker_adduser
+    ;;
+
+  build-container)
+    ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
+    build_container
+    ;;
+
+  build-conda-env)
+    ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
+    require_user
+    install_cuda
+    install_miniconda
+    create_conda_env
+    install_notebooks
+    LOGOUT=1
+    ;;
+
+  run-container)
+    ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
+    nvlog "Running NVIDIA Data Science container, accessible at http://localhost:8888/"
+    nvlog "Be sure your machine is not exposed to the internet."
+    nvlog "Command: docker run --gpus all --rm -it -p 8888:8888 ${ENVIRONMENT_NAME}:${STACK_VERSION}"
+    docker run --gpus all --rm -it -p 8888:8888 ${ENVIRONMENT_NAME}:${STACK_VERSION}
+    ;;
+
+  run-jupyter)
+    ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
+    SYSTEM_GPUS="$(nvidia-smi -L | wc -l)"
+    export MAXGPUS=${MAXGPUS:-$SYSTEM_GPUS}
+    nvlog "Max GPUs = $MAXGPUS"
+    source ${CONDA_ROOT}/bin/activate ${ENVIRONMENT_NAME}-${STACK_VERSION}
+    nvlog "Command: jupyter-notebook --no-browser --ip=0.0.0.0 --notebook-dir=${NOTEBOOKS_DIR}"
+    jupyter-notebook --no-browser --ip=0.0.0.0 --notebook-dir=${NOTEBOOKS_DIR}
+    ;;
+
+  install-driver)
+    install_driver
+    ;;
+  install-base)
+    install_base
+    ;;
+  install-docker)
+    install_docker
+    ;;
+  purge-driver)
+    purge_driver
+    ;;
+
+  docker-adduser)
+    require_user
+    docker_adduser
+    ;;
+
+  install-cuda)
+    install_cuda
+    ;;
+  install-miniconda)
+    require_user
+    install_miniconda
+    ;;
+  create-conda-env)
+    ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
+    require_user
+    nvlog "Conda detected: $CONDA_VER"
+    nvlog "Conda root: $CONDA_ROOT"
+    create_conda_env
+    ;;
+  install-notebooks)
+    require_user
+    install_notebooks
+    ;;
+
+  purge-conda)
+    require_user
+    purge_conda
+    ;;
+
+  pin)
+    ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
+    nvlog "START Pinning versions to ${PIN_OUT}"
+    docker pull ${PIN_CONTAINER}
+    ENVFILE=${RUNFROM}/environments/${ENVIRONMENT_NAME}.env
+    if [ ! -f ${ENVFILE} ]; then
+      nvlog "${ENVFILE} not found. Exiting."
+      exit
+    fi
+    ENV_COMMAND=$(cat "${ENVFILE}")
+    echo "This may take a while..."
+    if docker run --rm ${PIN_CONTAINER} \
+      conda create --name snapper --override-channels \
+      ${ENV_COMMAND} \
+      --dry-run \
+      --json > ${PIN_TMP}
+    then
+      cat <<EOF > ${PIN_OUT}
+# GENERATED FILE DO NOT EDIT
+channels:
+  - rapidsai
+  - nvidia
+  - conda-forge
+  - anaconda
+  - pytorch
+  - defaults
+dependencies:
+EOF
+      jq -r '[.actions.LINK[]] | sort_by(.name) | .[] | "  - \(.channel)::\(.name)=\(.version)"' ${PIN_TMP} >> ${PIN_OUT}
+    else
+      cat ${PIN_TMP}
+    fi
+    rm ${PIN_TMP}
+    nvlog "END Pinning versions to ${PIN_OUT}"
+    ;;
+
+  pin-clean)
+    nvlog "START Removing pin container"
+    rm ${PIN_TMP} ${PIN_OUT}
+    docker rmi -f ${PIN_CONTAINER}
+    nvlog "END Removing pin container"
+    ;;
+
+  help)
+    usage
+    ;;
+
+  *)
+    usage
+    ;;
+esac
+
+if [ $REBOOT -ne 0 ]; then
+  notify_reboot
+  exit
+fi
+
+if [ $LOGOUT -ne 0 ]; then
+  notify_logout
+  exit
+fi
+
+)2>&1 | tee -a install.log
