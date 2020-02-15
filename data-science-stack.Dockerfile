@@ -50,7 +50,7 @@ RUN curl https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x
     && chmod 755 /run-jupyter \
     && mkdir -p ${NOTEBOOKS_DIR} \
     && cd ${NOTEBOOKS_DIR} \
-    && git clone --recursive --single-branch --depth 1 --branch branch-${RAPIDS_VERSION} https://github.com/rapidsai/notebooks.git \
+    && git clone --recursive --single-branch --depth 1 --branch branch-${RAPIDS_VERSION} https://github.com/rapidsai/notebooks.git
 
 # Create Conda environment
 
