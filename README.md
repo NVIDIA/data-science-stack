@@ -377,16 +377,16 @@ Once the correct PCI bus ID is determined, populate the file
 /etc/X11/xorg.conf with the following contents, creating it if necessary:
 
 ```
-    Section "Device"
-        Identifier "Device0"
-        BusID "<correctly formatted PCI bus ID for Intel IGP>"
-        Driver "modesetting"
-    EndSection
+Section "Device"
+    Identifier "Device0"
+    BusID "<correctly formatted PCI bus ID for Intel IGP>"
+    Driver "modesetting"
+EndSection
 
-    Section "Screen"
-        Identifier "Screen0"
-        Device "Device0"
-    EndSection
+Section "Screen"
+    Identifier "Screen0"
+    Device "Device0"
+EndSection
 ```
 
 Replace the text `<correctly formatted PCI bus ID for Intel IGP>` with the
@@ -470,13 +470,10 @@ Reboot the system
 
 ```bash
 sudo reboot
-```> **Note**: On some systems, the external display connectors are driven by the
-> NVIDIA GPU, so restricting graphics to the Intel IGP will prevent the use
-> of external displays. If the use of external displays is desired on such
-> a system, the NVIDIA GPU will need to be shared between graphics and
-> compute tasks.
+```
 
-
+To check if function 2 and 3 have been removed, run following commands,
+which should not give any output.
 
 ```bash
 lspci -d '10de::0c03'
