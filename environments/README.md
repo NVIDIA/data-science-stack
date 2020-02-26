@@ -1,4 +1,20 @@
-# Data Science Stack Environments
+# Custom Data Science Stack Environments
+
+The default environment includes many commonly used libraries and is meant
+to get users started quickly.
+It is expected that users will create their own environments with additional
+libraries, and slim down to only the libraries needed.
+
+To create a fully pinned environment suitable for development, testing,
+CI/CD, and for production a stable environment must be produced.
+
+1. Create an `environments/FOO.env` file with the libraries wanted.
+1. Run `data-science-stack pin FOO`
+1. Examine the pinned.yaml file produced and copy to the environments:
+1. `cp pinned.yaml environments/FOO.yalm`
+
+Once pinned the environment can be used and shared without concerns
+that library versions will change over time.
 
 ## File Format
 
