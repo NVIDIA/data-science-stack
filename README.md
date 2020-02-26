@@ -1,16 +1,10 @@
 # NVIDIA Data Science Stack
 
-Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
-
-## Introduction
-
 NVIDIA Data Science Stack is a tool to make it easy to setup a machine and
 manage the software stacks for GPU accelerated Data Science.
 This includes laptops, desktops, workstations, and cloud virtual machines.
 
 Users can work with containers, or in a local environment.
-
-------------------------------------------------------------------------------
 
 ## Contents
 
@@ -21,8 +15,6 @@ Users can work with containers, or in a local environment.
 * [Installing NVIDIA Container SELinux Policy](#installing-nvidia-container-selinux-policy)
 * [Laptop Power and Integrated GPU Configuration](#laptop-power-and-integrated-gpu-configuration)
 * [More Information](#more-information)
-
-------------------------------------------------------------------------------
 
 ## Quick Start
 
@@ -93,8 +85,6 @@ data-science-stack setup-user
 Creating custom environments is covered in the
 [Custom Data Science Stack Environments](environments/README.md) README.
 
-------------------------------------------------------------------------------
-
 ## Minimum Hardware and Software
 
 * NVIDIA GPU - Pascal, Volta, or Turing family GPU(s) including:
@@ -106,8 +96,6 @@ Creating custom environments is covered in the
   * Red Hat Enterprise Linux 7.5+ or 8.0+ (requires license)
   * Other Linux distributions are NOT supported, but may work as long as
     the driver and Docker work.
-
-------------------------------------------------------------------------------
 
 ## Operating System Setup
 
@@ -139,8 +127,6 @@ Register the system with the Red Hat Customer Portal to complete the initial
 setup. See the How to Register and Subscribe a system to the Red Hat
 Customer Portal using Red Hat Subscription-Manager for further information -
 <https://access.redhat.com/solutions/253273>
-
-------------------------------------------------------------------------------
 
 ## Installing the NVIDIA GPU Driver
 
@@ -265,8 +251,6 @@ Once the NVIDIA driver install has completed, reboot.
 sudo reboot
 ```
 
-------------------------------------------------------------------------------
-
 ## Installing NVIDIA Container SELinux Policy
 
 > **Note**: This section is only for systems that will use SELinux AND Containers
@@ -314,8 +298,6 @@ sudo reboot
 > nvidia-container.pp file was generated, and
 > installed successfully. For reference, see
 > <https://bugzilla.redhat.com/show_bug.cgi?id=1567980>
-
-------------------------------------------------------------------------------
 
 ## Laptop Power and Integrated GPU Configuration
 
