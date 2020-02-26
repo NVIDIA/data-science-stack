@@ -1,19 +1,24 @@
 # NVIDIA Data Science Stack
 
-Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
+NVIDIA Data Science Stack is a tool to make it easy to setup a machine and
+manage the software stacks for GPU accelerated Data Science.
+This includes laptops, desktops, workstations, and cloud virtual machines.
 
-## Introduction
+Users can work with containers, or in a local environment.
 
-NVIDIA Data Science Stack is a tool to make it easy to setup and manage the
-software stacks to do GPU accelerated workstations for Data Science.
+## Contents
 
-User can work in containers, or work in a local Conda environment.
-
-------------------------------------------------------------------------------
+* [Quick Start](#quick-start)
+* [Minimum Hardware and Software](#minimum-hardware-and-software)
+* [Operating System Setup](#operating-system-setup)
+* [Installing the NVIDIA GPU Driver](#installing-the-nvidia-gpu-driver)
+* [Installing NVIDIA Container SELinux Policy](#installing-nvidia-container-selinux-policy)
+* [Laptop Power and Integrated GPU Configuration](#laptop-power-and-integrated-gpu-configuration)
+* [More Information](#more-information)
 
 ## Quick Start
 
-Usage:
+Usage and command documentation:
 
 ```bash
 data-science-stack help
@@ -37,7 +42,7 @@ data-science-stack setup-user
 
 Next, users have a choice to use containers or a local Conda environment:
 
-### In a Container (Recommended for container users)
+### Option 1 - In a Container (Recommended for container users)
 
 ```bash
 data-science-stack build-container
@@ -50,7 +55,7 @@ Control-C to exit.
 
 For information about Docker refer to <https://docs.docker.com/>
 
-### In a Local Conda Environment (Alternative)
+### Option 2 - In a Local Conda Environment (Recommended for inital development work)
 
 ```bash
 data-science-stack build-conda-env
@@ -64,6 +69,8 @@ Control-C to exit.
 For information about Conda environments refer to
 <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>
 
+### Multiple Users
+
 To setup multiple users on the machine, they will need to get access to
 Docker and setup Conda in the account
 
@@ -73,9 +80,12 @@ data-science-stack setup-user
 # ... use container or conda commands above
 ```
 
-------------------------------------------------------------------------------
+### Custom Stacks
 
-## Minimum Hardware/Software Compatibility
+Creating custom environments is covered in the
+[Custom Data Science Stack Environments](environments/README.md) README.
+
+## Minimum Hardware and Software
 
 * NVIDIA GPU - Pascal, Volta, or Turing family GPU(s) including:
   * Quadro P, GV, and RTX series
@@ -87,9 +97,7 @@ data-science-stack setup-user
   * Other Linux distributions are NOT supported, but may work as long as
     the driver and Docker work.
 
-------------------------------------------------------------------------------
-
-## Operating Systems
+## Operating System Setup
 
 Disable "Secure Boot" in the system BIOS/UEFI before installing Linux.
 
@@ -115,14 +123,12 @@ subscription or obtain a free evaluation subscription from the
 Red Hat Software & Download Center -
 <https://access.redhat.com/downloads>
 
-Register the system with the RedHat Customer Portal to complete the initial
+Register the system with the Red Hat Customer Portal to complete the initial
 setup. See the How to Register and Subscribe a system to the Red Hat
-Customer Portal using RedHat Subscription-Manager for further information -
+Customer Portal using Red Hat Subscription-Manager for further information -
 <https://access.redhat.com/solutions/253273>
 
-------------------------------------------------------------------------------
-
-## Installing the NVIDIA Accelerated Linux Graphics Driver
+## Installing the NVIDIA GPU Driver
 
 It is important that updated NVIDIA drivers are installed on the system.
 The minimum version of the NVIDIA driver supported is 440.33.
@@ -144,7 +150,7 @@ data-science-stack setup-system
 # reboot
 ```
 
-### RedHat Enterprise Linux (RHEL) Driver Install
+### Red Hat Enterprise Linux (RHEL) Driver Install
 
 Before attempting to install the driver, install the base dependencies:
 
@@ -245,11 +251,9 @@ Once the NVIDIA driver install has completed, reboot.
 sudo reboot
 ```
 
-------------------------------------------------------------------------------
-
 ## Installing NVIDIA Container SELinux Policy
 
-**This section is only for systems that will use SELinux AND Containers**
+> **Note**: This section is only for systems that will use SELinux AND Containers
 
 NVIDIA publishes an SELinux policy that enables using GPUs within containers
 on NVIDIA DGX Servers on GitHub at:
@@ -295,10 +299,193 @@ sudo reboot
 > installed successfully. For reference, see
 > <https://bugzilla.redhat.com/show_bug.cgi?id=1567980>
 
-------------------------------------------------------------------------------
+## Laptop Power and Integrated GPU Configuration
+
+On Laptop systems GPU selection and power settings may need
+additional configuration.
+
+> **Note**: On some systems, the external display connectors are driven by the
+> NVIDIA GPU, so restricting graphics to the Intel IGP will prevent the use
+> of external displays. If the use of external displays is desired on such
+> a system, the NVIDIA GPU will need to be shared between graphics and
+> compute tasks.
+
+For best performance, it is recommended that X be configured to use the
+Intel integrated graphics processor (IGP) to drive the display. This allows
+the full resources of the NVIDIA GPU to be dedicated to running compute
+workloads. For optimal power savings, it is recommended that the GPU be
+powered off when not in use.
+
+### Intel IGP on Ubuntu or RHEL 8.x
+
+When the NVIDIA driver is installed, Ubuntu and RHEL 8 will automatically
+configure the NVIDIA GPU to render the desktop environment, and offload the
+graphics rendered by the NVIDIA GPU for display on the Intel IGP using PRIME
+display offloading. For systems which drive external displays through the
+NVIDIA GPU, where use of external displays is desired, no further
+configuration is needed. For other systems, the X server will require
+additional configuration in order to dedicate the NVIDIA GPU for compute
+tasks only.
+
+In order to configure the X server properly, determine the PCI bus ID of
+the Intel IGP. Run the command:
+
+```bash
+lspci -d 8086::0300
+```
+
+to list all Intel VGA devices, which should display a line like:
+
+```
+00:02.0 VGA compatible controller: Intel Corporation Device 3e9b (rev 02)
+```
+
+Make a note of the bus ID that appears at the beginning of the line
+("00:02.0" in this example), and adapt this bus ID in order to use it in an
+X configuration file. lspci lists bus IDs using hexadecimal numbers in the
+form `[<domain>:]<bus>:<device>.<function>`. On systems where the only PCI
+domain is domain 0, the domain will typically be omitted. The X configuration
+file accepts bus IDs using decimal numbers in the form
+`PCI:<bus>[@<domain>]:device:function`. If the PCI domain is 0, the
+domain may be omitted.
+
+As an example, the lspci bus ID of `00:02.0` listed above would be written
+as `PCI:0:2:0` in an X configuration file. As an additional example showing
+the domain field populated, unique values for each field, and numbers that
+are different in decimal versus hexadecimal, the lspci bus ID `0010:0f:e.d`
+would be written as `PCI:15@16:14:13` in an X configuration file.
+
+Once the correct PCI bus ID is determined, populate the file
+/etc/X11/xorg.conf with the following contents, creating it if necessary:
+
+```
+Section "Device"
+    Identifier "Device0"
+    BusID "<correctly formatted PCI bus ID for Intel IGP>"
+    Driver "modesetting"
+EndSection
+
+Section "Screen"
+    Identifier "Screen0"
+    Device "Device0"
+EndSection
+```
+
+Replace the text `<correctly formatted PCI bus ID for Intel IGP>` with the
+bus ID string formed previously.
+
+> **Note**: While Ubuntu provides tools for simplifying switching between the
+> default NVIDIA+Intel PRIME display offloading behavior and an Intel-only
+> configuration, the Intel-only profile prevents the use of the NVIDIA driver
+> for non-graphical purposes in addition to disabling its use for graphics,
+> necessitating the manual X configuration.
+
+### Intel IGP on RHEL 7.x
+
+On versions of RHEL before RHEL 8, the X server will be configured to use
+the Intel IGP only for graphics by default, and no further configuration is
+needed to ensure that the NVIDIA GPU’s resources remain dedicated for compute
+purposes. On systems with the external displays driven by the NVIDIA GPU,
+where use of external displays is desired, PRIME display offloading will need
+to be manually configured. Manual configuration of PRIME display offloading
+is beyond the scope of this documentation.
+
+### Laptop GPU Power Management
+
+The NVIDIA GPU driver supports runtime Power Management (PM). By default,
+GPU runtime power management is disabled. To enable GPU runtime PM, please
+install an NVIDIA PM udev rules file. This udev file:
+
+* Removes function 2 (USB xHCI Host controller) and function 3 (USB Type-C
+  USCI controller) of the GPU, if present. Linux kernel versions before 5.3
+  do not have full-fledged support for these functions, which will prevent
+  GPU runtime PM.
+* Sets 'auto' in the sysfs runtime PM entries for function 0 (VGA display
+  controller) and function 1 (Audio controller).
+
+#### Installing the NVIDIA PM udev rules on laptops
+
+Create the file `80-nvidia-pm.rules` with the following contents:
+
+```
+# udev rules for Enabling Runtime Power Management for NVIDIA GPU.
+#
+# The NVIDIA Turing GPU is a multi-function PCI device
+# which has the following four functions:
+#
+#     Function 0 : VGA display controller
+#     Function 1 : Audio controller
+#     Function 2 : USB xHCI Host controller
+#     Function 3 : USB Type-C USCI controller
+#
+# The NVIDIA GPU driver only manages function 0.
+# The remaining functions are managed by other drivers.
+# The drivers for function 2 and function 3 in this kernel version
+# lack full support for runtime PM, which prevents proper runtime
+# PM functionality for function 0.
+#
+# This udev rules script will remove these functions during
+# boot and will allow runtime PM to work for the GPU. It won't
+# impact normal USB functionality, which is managed by the
+# integrated USB xHCI Host controller.
+
+# Remove NVIDIA USB xHCI Host Controller devices, if present
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c0330", ATTR{remove}="1"
+
+# Remove NVIDIA USB Type-C UCSI devices, if present
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c8000", ATTR{remove}="1"
+
+# Enable runtime PM for NVIDIA VGA controller devices
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030000", TEST=="power/control", ATTR{power/control}="auto"
+
+# Enable runtime PM for NVIDIA Audio controller devices
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x040300", TEST=="power/control", ATTR{power/control}="auto"
+```
+
+Copy the downloaded file to /lib/udev/rules.d/
+
+```bash
+sudo cp 80-nvidia-pm.rules /lib/udev/rules.d/
+```
+
+Reboot the system
+
+```bash
+sudo reboot
+```
+
+To check if function 2 and 3 have been removed, run following commands,
+which should not give any output.
+
+```bash
+lspci -d '10de::0c03'
+lspci -d '10de::0c80'
+```
+
+#### Uninstalling the NVIDIA PM udev rules on laptops
+
+Remove the NVIDIA PM rules file
+
+```bash
+sudo rm /lib/udev/rules.d/80-nvidia-pm.rules
+```
+
+Reboot the system
+
+```bash
+sudo reboot
+```
 
 ## More Information
 
 * [NVIDIA Accelerated Data Science](https://www.nvidia.com/en-us/deep-learning-ai/solutions/data-science/)
 * [RAPIDS - Open GPU Data Science](https://rapids.ai/)
+  * [RAPIDS Notebooks](https://github.com/rapidsai/notebooks)
 * [NVIDIA Powered Data Science Workstation](https://www.nvidia.com/en-us/deep-learning-ai/solutions/data-science/workstations/)
+* [NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit)
+* [Docker CE](https://docs.docker.com/install/)
+  * [Ubuntu](https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-docker-ce)
+  * [Red Hat / Cent OS](https://docs.docker.com/install/linux/docker-ce/centos/#install-docker-engine---community)
+* [NVIDIA Container Toolkit](https://github.com/NVIDIA/nvidia-docker)
+* [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
+* [JupyterLab](https://jupyterlab.readthedocs.io/en/stable/)
