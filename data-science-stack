@@ -3,7 +3,7 @@
 # Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 
 # Global Paramaters
-STACK_VERSION=2.1.0
+STACK_VERSION=2.2.0
 
 MIN_DRIVER=440.33.0
 MIN_CUDA=10.1.243
