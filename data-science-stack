@@ -26,7 +26,6 @@ PIN_CONTAINER="frolvlad/alpine-miniconda3:python3.7"
 PIN_TMP="tmp.json"
 PIN_OUT="${OUT:-pinned.yaml}"
 
-
 REBOOT=0
 LOGOUT=0
 
@@ -483,6 +482,7 @@ diagnostics () {
   nvlog "END Diagnostics"
 }
 
+
 notify_reboot () {
   nvlog
   nvlog
@@ -557,7 +557,7 @@ Other Commands:
 EOF
 }
 
-(
+
 detect_driver
 detect_cuda
 detect_docker
@@ -723,5 +723,3 @@ if [ $LOGOUT -ne 0 ]; then
   notify_logout
   exit
 fi
-
-)2>&1 | tee -a install.log
