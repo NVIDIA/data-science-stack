@@ -46,7 +46,7 @@ RUN curl https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x
     && ${CONDA_ROOT}/bin/conda init bash \
     && echo "#!/bin/bash\n\
       source /conda/bin/activate data-science-stack-${STACK_VERSION}\n\
-      jupyter-notebook --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token='' --notebook-dir=${NOTEBOOKS_DIR}" > /run-jupyter \
+      jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token='' --notebook-dir=${NOTEBOOKS_DIR}" > /run-jupyter \
     && chmod 755 /run-jupyter \
     && mkdir -p ${NOTEBOOKS_DIR} \
     && cd ${NOTEBOOKS_DIR} \

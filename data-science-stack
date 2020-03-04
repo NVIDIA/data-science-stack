@@ -328,8 +328,7 @@ build_container () {
   nvlog "Run From: $RUNFROM"
   nvlog "Temp Directory: $TEMPDIR"
   cd $TEMPDIR
-  cp -a $RUNFROM/data-science-stack.Dockerfile $RUNFROM/README.md \
-    $TEMPDIR
+  cp -a $RUNFROM/data-science-stack.Dockerfile $RUNFROM/README.md $TEMPDIR
   cp -a $RUNFROM/environments/${ENVIRONMENT_NAME}-pinned.yaml $TEMPDIR/environment-pinned.yaml
   ls -aFl
   docker build \
@@ -685,8 +684,8 @@ case "$1" in
     ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
     nvlog "Running NVIDIA Data Science container, accessible at http://localhost:8888/"
     nvlog "Be sure your machine is not exposed to the internet."
-    nvlog "Command: docker run --gpus all --rm -it -p 8888:8888 ${ENVIRONMENT_NAME}:${STACK_VERSION}"
-    docker run --gpus all --rm -it -p 8888:8888 ${ENVIRONMENT_NAME}:${STACK_VERSION}
+    nvlog "Command: docker run --gpus all --rm -it -p 8888:8888 -p 8787:8787 -p 8786:8786 ${ENVIRONMENT_NAME}:${STACK_VERSION}"
+    docker run --gpus all --rm -it -p 8888:8888 -p 8787:8787 -p 8786:8786 ${ENVIRONMENT_NAME}:${STACK_VERSION}
     ;;
 
   run-jupyter)
@@ -695,8 +694,8 @@ case "$1" in
     export MAXGPUS=${MAXGPUS:-$SYSTEM_GPUS}
     nvlog "Max GPUs = $MAXGPUS"
     source ${CONDA_ROOT}/bin/activate ${ENVIRONMENT_NAME}-${STACK_VERSION}
-    nvlog "Command: jupyter-notebook --no-browser --ip=0.0.0.0 --notebook-dir=${NOTEBOOKS_DIR}"
-    jupyter-notebook --no-browser --ip=0.0.0.0 --notebook-dir=${NOTEBOOKS_DIR}
+    nvlog "Command: jupyter-lab --no-browser --ip=0.0.0.0 --notebook-dir=${NOTEBOOKS_DIR}"
+    jupyter-lab --no-browser --ip=0.0.0.0 --notebook-dir=${NOTEBOOKS_DIR}
     ;;
 
   install-driver)
