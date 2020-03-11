@@ -97,7 +97,7 @@ install_base () {
 
 
 detect_driver () {
-  DRIVER_VER=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2> /dev/null)
+  DRIVER_VER=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -n1 | cut -d " " -f1 2> /dev/null)
   if [ $? -ne 0 ]; then
     DRIVER_VER=0
   fi
