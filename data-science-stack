@@ -24,7 +24,6 @@ fi
 
 PIN_CONTAINER="frolvlad/alpine-miniconda3:python3.7"
 PIN_TMP="tmp.json"
-PIN_OUT="${OUT:-pinned.yaml}"
 
 REBOOT=0
 LOGOUT=0
@@ -361,7 +360,7 @@ install_miniconda () {
   fi
 
   if [ -d "${CONDA_ROOT}" ]; then
-    echo "Saving ${CONDA_ROOT} to ${CONDA_ROOT}.bak..."
+    nvlog "Saving ${CONDA_ROOT} to ${CONDA_ROOT}.bak..."
     mv ${CONDA_ROOT} ${CONDA_ROOT}.bak
   fi
   mkdir -p ${HOME}/.conda
@@ -575,26 +574,26 @@ Containers Commands:
 
     build-container <environment-name>
         Build the container version of the stack.
-        Default <environment-name> is "data-science-stack".
+        Default <environment-name> is "${DEFAULT_ENVIRONMENT}".
     run-container <environment-name>
         Run Jupyter in the container.
-        Default <environment-name> is "data-science-stack".
+        Default <environment-name> is "${DEFAULT_ENVIRONMENT}".
 
 Conda Local Environments Commands:
 
     build-conda-env <environment-name>
         Build the Conda environment version of the stack.
-        Default <environment-name> is "data-science-stack".
+        Default <environment-name> is "${DEFAULT_ENVIRONMENT}".
     run-jupyter <environment-name>
         Run Jupyter in the environment.
-        Default <environment-name> is "data-science-stack".
+        Default <environment-name> is "${DEFAULT_ENVIRONMENT}".
 
 Environment Pinning Commands (for stack maintainers):
 
     pin <environment-name>
-        Generates a pinned.yaml file based on the
+        Generates a <environment-name>-pinned.yaml file based on the
         "./environments/<environment-name>.env" file.
-        Default <environment-name> is "data-science-stack".
+        Default <environment-name> is "${DEFAULT_ENVIRONMENT}".
         See environments/READ.md for more info.
     pin-clean
         Cleans up temporary files and containers from pinning process.
@@ -742,6 +741,7 @@ case "$1" in
 
   pin)
     ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
+    PIN_OUT=${ENVIRONMENT_NAME}-pinned.yaml
     nvlog "START Pinning versions to ${PIN_OUT}"
     docker pull ${PIN_CONTAINER}
     ENVFILE=${RUNFROM}/environments/${ENVIRONMENT_NAME}.env
@@ -750,12 +750,12 @@ case "$1" in
       exit
     fi
     ENV_COMMAND=$(cat "${ENVFILE}")
-    echo "This may take a while..."
-    if docker run --rm ${PIN_CONTAINER} \
+    CMD=$(echo "docker run --rm ${PIN_CONTAINER} \
       conda create --name snapper --override-channels \
-      ${ENV_COMMAND} \
-      --dry-run \
-      --json > ${PIN_TMP}
+      ${ENV_COMMAND} --dry-run" | tr "\n" " " | tr -s [:space:] " ")
+    nvlog "${CMD}"
+    nvlog "This may take a while..."
+    if ${CMD} --json > ${PIN_TMP}
     then
       cat <<EOF > ${PIN_OUT}
 # GENERATED FILE DO NOT EDIT
@@ -778,7 +778,7 @@ EOF
 
   pin-clean)
     nvlog "START Removing pin container"
-    rm ${PIN_TMP} ${PIN_OUT}
+    rm ${PIN_TMP}
     docker rmi -f ${PIN_CONTAINER}
     nvlog "END Removing pin container"
     ;;
