@@ -645,6 +645,11 @@ case "$1" in
     echo Version: ${STACK_VERSION}
     ;;
 
+  list)
+    echo "Environments available:"
+    cd environments && ls *.env | sed s/.env//g
+    ;;
+
   diagnostics)
     require_user
     diagnostics
