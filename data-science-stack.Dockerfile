@@ -32,9 +32,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -y --fix-missing \
 
 # Create Base environment
 
-ARG STACK_VERSION=2.2.2
+ARG STACK_VERSION=2.3.0
 ARG CONDA_VERSION=4.7.12
-ARG RAPIDS_VERSION=0.12
+ARG RAPIDS_VERSION=0.13
 
 ENV CONDA_ROOT=/conda
 ENV NOTEBOOKS_DIR=/notebooks
@@ -50,7 +50,10 @@ RUN curl https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x
     && chmod 755 /run-jupyter \
     && mkdir -p ${NOTEBOOKS_DIR} \
     && cd ${NOTEBOOKS_DIR} \
-    && git clone --recursive --single-branch --depth 1 --branch branch-${RAPIDS_VERSION} https://github.com/rapidsai/notebooks.git
+    && git clone --single-branch --depth 1 --branch branch-${RAPIDS_VERSION} \
+      https://github.com/rapidsai/notebooks.git \
+    && cd notebooks \
+    && git submodule update --init --depth 1 --remote
 
 # Create Conda environment
 
