@@ -53,7 +53,9 @@ RUN curl https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x
     && git clone --single-branch --depth 1 --branch branch-${RAPIDS_VERSION} \
       https://github.com/rapidsai/notebooks.git \
     && cd notebooks \
-    && git submodule update --init --depth 1 --remote
+    && git submodule update --init --remote \
+    && rm -rf .git \
+    && rm -rf `find repos/ -maxdepth 2 -mindepth 2 | grep -v notebooks`
 
 # Create Conda environment
 
