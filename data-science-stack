@@ -107,6 +107,27 @@ detect_driver () {
 install_driver () {
   nvlog "START Installing Driver"
 
+  if [ $FLAVOR = "ubuntu" ]; then
+    #if [ -f /usr/bin/nvidia-uninstall ]; then
+    if [ -f /tmp/foo ]; then
+      cat << EOF
+
+  Found /usr/bin/nvidia-uninstall which means a driver .run file was used
+  on this machine. Driver install/update cannot proceed. The solution is to
+  purge the driver and reinstall it with the correct apt repositories.
+
+  Make sure you are connected to the internet and run:
+
+    ${SCRIPT_NAME} purge-driver
+    ${SCRIPT_NAME} install-driver
+
+  Then rerun the command you just ran to proceed.
+
+EOF
+      exit
+    fi
+  fi
+
   semver_gte $DRIVER_VER $MIN_DRIVER
   if [ $? -eq 1 ]; then
     nvlog "Driver is new enough - skip install"
@@ -152,7 +173,12 @@ EOF
     nvlog "Aborting - doing nothing"
   fi
 
+
   if [ $FLAVOR = "ubuntu" ]; then
+    if [ -f /usr/bin/nvidia-uninstall ]; then
+      nvlog "Running /usr/bin/nvidia-uninstall first."
+      sudo /usr/bin/nvidia-uninstall
+    fi
     sudo apt -y purge nvidia-*
     sudo apt -y autoremove
     sudo rm -f /etc/modprobe.d/blacklist-nouveau.conf
@@ -160,7 +186,7 @@ EOF
     sudo update-initramfs -k all -u
     REBOOT=1
   else
-    nvlog "ERROR: Automated NVIDIA driver purge on Red Hat not supported."
+    nvlog "ERROR: Automated NVIDIA driver purge for Red Hat not supported."
     exit
   fi
 
@@ -421,7 +447,9 @@ install_notebooks () {
   git clone --single-branch --depth 1 --branch branch-${NOTEBOOKS_VERSION} \
     https://github.com/rapidsai/notebooks.git
   cd notebooks
-  git submodule update --init --depth 1 --remote
+  git submodule update --init --remote
+  rm -rf .git
+  rm -rf `find repos/ -maxdepth 2 -mindepth 2 | grep -v notebooks`
 
   nvlog "END Install Notebooks"
 }
