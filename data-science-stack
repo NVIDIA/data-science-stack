@@ -591,6 +591,8 @@ Information Commands:
         Display help and usage.
     version
         Display version information.
+    list
+        List the available environments.
     diagnostics
         Display stack sofware versions and info.
 
@@ -677,7 +679,7 @@ case "$1" in
     ;;
 
   list)
-    echo "Environments available:"
+    echo "Environments available: (default is ${DEFAULT_ENVIRONMENT})"
     cd environments && ls *.env | sed s/.env//g
     ;;
 
