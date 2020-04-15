@@ -422,7 +422,6 @@ create_conda_env () {
     pip install jupyterlab-nvdashboard ; \
     jupyter labextension install -y --clean \
       @jupyter-widgets/jupyterlab-manager \
-      ipyvolume \
       jupyter-threejs \
       dask-labextension \
       jupyterlab-nvdashboard

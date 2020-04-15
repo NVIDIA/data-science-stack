@@ -68,7 +68,6 @@ RUN ${CONDA_ROOT}/bin/conda env create -n data-science-stack-${STACK_VERSION} \
       pip install jupyterlab-nvdashboard ; \
       jupyter labextension install -y --clean \
         @jupyter-widgets/jupyterlab-manager \
-        ipyvolume \
         jupyter-threejs \
         dask-labextension \
         jupyterlab-nvdashboard' \
