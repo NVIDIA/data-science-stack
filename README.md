@@ -6,6 +6,12 @@ This includes laptops, desktops, workstations, and cloud virtual machines.
 
 Users can work with containers, or in a local environment.
 
+To subscribe to **release notifications** watch the
+<https://github.com/NVIDIA/data-science-stack> repository.
+We suggest "Releases Only". Help for
+[Watching and unwatching repositories](https://help.github.com/en/github/receiving-notifications-about-activity-on-github/watching-and-unwatching-repositories)
+is available.
+
 ## Contents
 
 * [Quick Start](#quick-start)
@@ -18,26 +24,26 @@ Users can work with containers, or in a local environment.
 
 ## Quick Start
 
-Usage and command documentation:
-
-```bash
-data-science-stack help
-```
+_For usage and command documentation: `./data-science-stack help` at any time._
 
 On Ubuntu 18.04:
 
 ```bash
-data-science-stack setup-system
-data-science-stack setup-user
+git clone github.com/NVIDIA/data-science-stack
+cd data-science-stack
+./data-science-stack setup-system
+./data-science-stack setup-user
 ````
 
 On Red Hat Enterprise Linux 7.x or 8.x:
 
 ```bash
-data-science-stack setup-system
+git clone github.com/NVIDIA/data-science-stack
+cd data-science-stack
+./data-science-stack setup-system
 # script will stop, manually install driver ... (instuctions below)
-data-science-stack setup-system
-data-science-stack setup-user
+./data-science-stack setup-system
+./data-science-stack setup-user
 ```
 
 Next, users have a choice to use containers or a local Conda environment:
@@ -45,8 +51,9 @@ Next, users have a choice to use containers or a local Conda environment:
 ### Option 1 - In a Container (Recommended for container users)
 
 ```bash
-data-science-stack build-container
-data-science-stack run-container
+./data-science-stack list
+./data-science-stack build-container
+./data-science-stack run-container
 ```
 
 This creates and runs Jupyter in the container. Users can then connect
@@ -58,8 +65,9 @@ For information about Docker refer to <https://docs.docker.com/>
 ### Option 2 - In a Local Conda Environment (Recommended for inital development work)
 
 ```bash
-data-science-stack build-conda-env
-data-science-stack run-jupyter
+./data-science-stack list
+./data-science-stack build-conda-env
+./data-science-stack run-jupyter
 ```
 
 This creates the local environment and runs Jupyter. Users can then connect
@@ -76,7 +84,7 @@ Docker and setup Conda in the account
 
 ```bash
 # As the additional user
-data-science-stack setup-user
+./data-science-stack setup-user
 # ... use container or conda commands above
 ```
 
@@ -144,19 +152,24 @@ If the driver if too old or the script is having problems, the driver can
 be removed (this may have side effects, read the warnings) and reinstalled:
 
 ```bash
-data-science-stack purge-driver
+./data-science-stack purge-driver
 # reboot
-data-science-stack setup-system
+./data-science-stack setup-system
 # reboot
 ```
 
 ### Red Hat Enterprise Linux (RHEL) Driver Install
 
-Before attempting to install the driver, install the base dependencies:
+Before attempting to install the driver check that the system does not
+have `/usr/bin/nvidia-uninstall` which is left by an old driver .run file.
+If it exists, run it with `sudo /usr/bin/nvidia-uninstall` to remove the
+old driver first.
+
+Install the base dependencies:
 
 ```bash
-data-science-stack setup-system
-# this will stop one prerequisites are installed
+./data-science-stack setup-system
+# this will stop once prerequisites are installed
 ```
 
 Upgrade the kernel and reboot:
