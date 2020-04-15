@@ -795,17 +795,9 @@ case "$1" in
     nvlog "This may take a while..."
     if ${CMD} --json > ${PIN_TMP}
     then
-      cat <<EOF > ${PIN_OUT}
-# GENERATED FILE DO NOT EDIT
-channels:
-  - rapidsai
-  - nvidia
-  - conda-forge
-  - anaconda
-  - pytorch
-  - defaults
-dependencies:
-EOF
+      echo -e "# GENERATED FILE DO NOT EDIT\nchannels:" > ${PIN_OUT}
+      grep "^-c" ${ENVFILE} | sed "s/-c /  - /g" >> ${PIN_OUT}
+      echo "dependencies:" >> ${PIN_OUT}
       jq -r '[.actions.LINK[]] | sort_by(.name) | .[] | "  - \(.channel)::\(.name)=\(.version)"' ${PIN_TMP} >> ${PIN_OUT}
     else
       cat ${PIN_TMP}
