@@ -108,8 +108,7 @@ install_driver () {
   nvlog "START Installing Driver"
 
   if [ $FLAVOR = "ubuntu" ]; then
-    #if [ -f /usr/bin/nvidia-uninstall ]; then
-    if [ -f /tmp/foo ]; then
+    if [ -f /usr/bin/nvidia-uninstall ]; then
       cat << EOF
 
   Found /usr/bin/nvidia-uninstall which means a driver .run file was used
