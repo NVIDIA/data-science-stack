@@ -523,6 +523,9 @@ notify_reboot () {
   nvlog "ACTION REQUIRED:"
   nvlog "For the changes to take effect, reboot the machine."
   nvlog
+  nvlog "Current working directory: `pwd`/"
+  nvlog "data-science-stack script: ${RUNFROM}/${SCRIPT_NAME}"
+  nvlog
   nvlog
 }
 
@@ -532,6 +535,9 @@ notify_logout () {
   nvlog
   nvlog "ACTION REQUIRED:"
   nvlog "For the changes to take effect, please logout and login again."
+  nvlog
+  nvlog "Current working directory: `pwd`/"
+  nvlog "data-science-stack script: ${RUNFROM}/${SCRIPT_NAME}"
   nvlog
   nvlog
 }
