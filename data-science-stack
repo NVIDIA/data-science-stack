@@ -97,8 +97,12 @@ install_base () {
 
 
 detect_driver () {
-  DRIVER_VER=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -n1 | cut -d " " -f1 2> /dev/null)
-  if [ $? -ne 0 ]; then
+  if [ -f /usr/bin/nvidia-smi ]; then
+    DRIVER_VER=$(/usr/bin/nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -n1 | cut -d " " -f1 2> /dev/null)
+    if [ $? -ne 0 ]; then
+      DRIVER_VER=0
+    fi
+  else
     DRIVER_VER=0
   fi
 }
@@ -491,6 +495,8 @@ diagnostics () {
   nvlog "NVIDIA SMI:"
   if [ -f /usr/bin/nvidia-smi ]; then
     /usr/bin/nvidia-smi
+  else
+    echo "nvidia-smi not found, NVIDIA GPU Driver not installed correctly."
   fi
   nvlog "Shared libraries:"
   ldconfig -p | grep 'nvidia\|libnv\|cuda\|libcu'
@@ -726,7 +732,7 @@ case "$1" in
 
   run-jupyter)
     ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
-    SYSTEM_GPUS="$(nvidia-smi -L | wc -l)"
+    SYSTEM_GPUS="$(/usr/bin/nvidia-smi -L | wc -l)"
     export MAXGPUS=${MAXGPUS:-$SYSTEM_GPUS}
     nvlog "Max GPUs = $MAXGPUS"
     source ${CONDA_ROOT}/bin/activate ${ENVIRONMENT_NAME}-${STACK_VERSION}
