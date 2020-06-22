@@ -495,10 +495,22 @@ ${HOME}/conda ${HOME}/.conda ) [y/N]?" -r
 diagnostics () {
   nvlog "START Diagnostics"
 
+  nvlog "Run as: $USER"
   nvlog "OS Flavor: $FLAVOR"
   if [ -f /usr/bin/lsb_release ]; then
-    /usr/bin/lsb_release -a
+    nvlog "lsb_release:"
+    /usr/bin/lsb_release -r -d
   fi
+  if [ -f /bin/uname ]; then
+    nvlog "uname -a"
+    /bin/uname -a
+  fi
+
+  nvlog "Storage (non-tmpfs, non-loopback)"
+  df -h | grep -v dev/loop | grep -v tmpfs
+
+  nvlog "Network test"
+  ping -c 1 -W 3 8.8.8.8
 
   nvlog "Driver detected: $DRIVER_VER"
   nvlog "NVIDIA SMI:"
@@ -507,11 +519,12 @@ diagnostics () {
   else
     echo "nvidia-smi not found, NVIDIA GPU Driver not installed correctly."
   fi
-  nvlog "Shared libraries:"
-  ldconfig -p | grep 'nvidia\|libnv\|cuda\|libcu'
 
   nvlog "CUDA detected: $CUDA_VER"
   nvlog "Docker detected: $DOCKER_VER"
+
+  nvlog "Shared libraries:"
+  ldconfig -p | grep 'nvidia\|libnv\|cuda\|libcu'
 
   nvlog "Notebooks directory: $NOTEBOOKS_DIR"
   nvlog "Conda detected: $CONDA_VER"
