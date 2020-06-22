@@ -9,7 +9,7 @@ NOTEBOOKS_VERSION=0.14
 MIN_DRIVER=440.33.0
 MIN_CUDA=10.1.243
 MIN_DOCKER=19.03.4
-MIN_CONDA=4.7.12
+MIN_CONDA=4.8.3
 
 SCRIPT_NAME=$(basename $0)
 RUNFROM=$(dirname $(readlink -f $0))
@@ -387,15 +387,24 @@ install_miniconda () {
     nvlog "Conda is new enough"
     nvlog "END Install Miniconda"
     return
+  elif [ $? -ne 0 ]; then
+    nvlog
+    nvlog "ERROR: Conda is installed but older, please update conda environment"
+    nvlog "Try 'conda update -n base -c defaults conda'"
+    nvlog
+    exit
   fi
 
   if [ -d "${CONDA_ROOT}" ]; then
-    nvlog "Saving ${CONDA_ROOT} to ${CONDA_ROOT}.bak..."
-    mv ${CONDA_ROOT} ${CONDA_ROOT}.bak
+    nvlog
+    nvlog "ERROR: Found a ${CONDA_ROOT} directory, please move/backup before install"
+    nvlog
+    exit
   fi
+
   mkdir -p ${HOME}/.conda
 
-  curl https://repo.anaconda.com/miniconda/Miniconda3-$MIN_CONDA-Linux-x86_64.sh -o miniconda.sh
+  curl https://repo.anaconda.com/miniconda/Miniconda3-py37_$MIN_CONDA-Linux-x86_64.sh -o miniconda.sh
   chmod +x miniconda.sh
   ./miniconda.sh -bf -p ${CONDA_ROOT}  # Use the existing Conda
 

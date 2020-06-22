@@ -33,13 +33,13 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -y --fix-missing \
 # Create Base environment
 
 ARG STACK_VERSION=2.4.0-dev
-ARG CONDA_VERSION=4.7.12
+ARG CONDA_VERSION=4.8.3
 ARG RAPIDS_VERSION=0.14
 
 ENV CONDA_ROOT=/conda
 ENV NOTEBOOKS_DIR=/notebooks
 
-RUN curl https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x86_64.sh -k -o /miniconda.sh \
+RUN curl https://repo.anaconda.com/miniconda/Miniconda3-py37_${CONDA_VERSION}-Linux-x86_64.sh -k -o /miniconda.sh \
     && sh /miniconda.sh -b -p ${CONDA_ROOT} \
     && rm -f /miniconda.sh \
     && echo "conda ${CONDA_VERSION}" >> /conda/conda-meta/pinned \
