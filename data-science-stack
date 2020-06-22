@@ -349,6 +349,7 @@ docker_adduser () {
   nvlog "END Add User to Docker Group"
 }
 
+
 build_container () {
   nvlog "START Building Container - env:${ENVIRONMENT_NAME} => ${ENVIRONMENT_NAME}:${STACK_VERSION}"
 
@@ -367,6 +368,25 @@ build_container () {
 
   nvlog "END Building Container"
 }
+
+
+purge_container () {
+  nvlog "START Purge Container - env:${ENVIRONMENT_NAME} => ${ENVIRONMENT_NAME}:${STACK_VERSION}"
+
+
+  read -p "DANGER: Are you sure you want to remove container ${ENVIRONMENT_NAME}:${STACK_VERSION} [y/N]?" -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    nvlog "Removing container ${ENVIRONMENT_NAME}:${STACK_VERSION}"
+    CMD="docker rmi -f ${ENVIRONMENT_NAME}:${STACK_VERSION}"
+    nvlog "${CMD}"
+    ${CMD}
+  else
+    nvlog "Aborting - no container deleted"
+  fi
+
+  nvlog "END Purge Container"
+}
+
 
 detect_conda () {
   CONDA_VER=$(conda --version 2> /dev/null)
@@ -426,7 +446,8 @@ create_conda_env () {
   ${CONDA_ROOT}/bin/conda env create -n ${ENVIRONMENT_NAME}-${STACK_VERSION} \
     -f $RUNFROM/environments/${ENVIRONMENT_NAME}-pinned.yaml
 
-  echo "conda activate ${ENVIRONMENT_NAME}-${STACK_VERSION} # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+  sed -i '/DATA-SCIENCE-STACK-ADDED-ACT/d' ${HOME}/.bashrc
+  echo "conda activate ${ENVIRONMENT_NAME}-${STACK_VERSION} # DATA-SCIENCE-STACK-ADDED-ACT" >> ${HOME}/.bashrc
   if [ -d ${HOME}/Desktop/ ]; then
     cp $RUNFROM/README.md ${HOME}/Desktop/data-science-stack-README.md
   fi
@@ -440,6 +461,26 @@ create_conda_env () {
       jupyterlab-nvdashboard
 
   nvlog "END Setup Conda Env"
+}
+
+
+purge_conda_env () {
+  nvlog "START Purge Conda Env - env:${ENVIRONMENT_NAME} => ${ENVIRONMENT_NAME}-${STACK_VERSION}"
+
+  read -p "DANGER: Are you sure you want to remove ${ENVIRONMENT_NAME}-${STACK_VERSION} [y/N]?" -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    nvlog "Removing Conda environment ${ENVIRONMENT_NAME}-${STACK_VERSION}"
+
+    sed -i '/DATA-SCIENCE-STACK-ADDED-ACT/d' ${HOME}/.bashrc
+    nvlog "${CONDA_ROOT}/bin/conda env remove -n ${ENVIRONMENT_NAME}-${STACK_VERSION}"
+    source ${CONDA_ROOT}/bin/deactivate ; \
+      ${CONDA_ROOT}/bin/conda env remove -n ${ENVIRONMENT_NAME}-${STACK_VERSION}
+    LOGOUT=1
+  else
+    nvlog "Aborting - no files deleted"
+  fi
+
+  nvlog "END Purge Conda Env"
 }
 
 
@@ -690,8 +731,12 @@ Other Subcommands:
         Install the NVIDIA CUDA Toolkit v${MIN_CUDA}+
     install-miniconda
         Install Miniconda v${MIN_CONDA}+.
+    purge-container <environment-name>
+        Removes the container.
     create-conda-env <environment-name>
         Creates a new conda environment from pinned environment.
+    purge-conda-env <environment-name>
+        Removes the conda environment.
     purge-conda
         DANGER: Purge the account of Conda and the software stack.
     install-notebooks
@@ -752,6 +797,10 @@ case "$1" in
     ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
     build_container
     ;;
+  purge-container)
+    ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
+    purge_container
+    ;;
 
   build-conda-env)
     ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
@@ -781,17 +830,17 @@ case "$1" in
     jupyter-lab --no-browser --ip=0.0.0.0 --notebook-dir=${NOTEBOOKS_DIR}
     ;;
 
-  install-driver)
-    install_driver
-    ;;
   install-base)
     install_base
     ;;
-  install-docker)
-    install_docker
+  install-driver)
+    install_driver
     ;;
   purge-driver)
     purge_driver
+    ;;
+  install-docker)
+    install_docker
     ;;
 
   docker-adduser)
@@ -812,6 +861,11 @@ case "$1" in
     nvlog "Conda detected: $CONDA_VER"
     nvlog "Conda root: $CONDA_ROOT"
     create_conda_env
+    ;;
+  purge-conda-env)
+    ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
+    require_user
+    purge_conda_env
     ;;
   install-notebooks)
     require_user
