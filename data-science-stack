@@ -610,7 +610,8 @@ Information Commands:
     help
         Display help and usage.
     version
-        Display version information.
+        Display version information. Version:, Latest:,
+        and an Error: if the current release version cannot be retrieved.
     list
         List the available environments.
     diagnostics
@@ -696,6 +697,16 @@ detect_conda
 case "$1" in
   version)
     echo Version: ${STACK_VERSION}
+    TEMPFILE=$(mktemp)
+    curl --silent -o $TEMPFILE "https://api.github.com/repos/NVIDIA/data-science-stack/releases/latest"
+    GH_LATEST=$(cat $TEMPFILE | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    if [[ $GH_LATEST == v* ]]; then
+      echo Latest: $GH_LATEST
+    else
+      echo Latest: unknown
+      echo Error: `cat $TEMPFILE`
+    fi
+    rm -f $TEMPFILE
     ;;
 
   list)
