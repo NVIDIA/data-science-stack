@@ -32,7 +32,6 @@ On Ubuntu 18.04:
 git clone github.com/NVIDIA/data-science-stack
 cd data-science-stack
 ./data-science-stack setup-system
-./data-science-stack setup-user
 ````
 
 On Red Hat Enterprise Linux 7.x or 8.x:
@@ -43,7 +42,6 @@ cd data-science-stack
 ./data-science-stack setup-system
 # script will stop, manually install driver ... (instuctions below)
 ./data-science-stack setup-system
-./data-science-stack setup-user
 ```
 
 Next, users have a choice to use containers or a local Conda environment:
