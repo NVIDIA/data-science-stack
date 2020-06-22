@@ -634,8 +634,6 @@ Setup Commands:
 
     setup-system
         Setup system to enable NVIDIA Data Science software.
-    setup-user
-        Setup user permissions to use containers.
 
 Containers Commands:
 
@@ -676,6 +674,8 @@ Other Subcommands:
   These subcommands run parts of the above commands, and should be used with
   caution as the ordering and dependecies ARE NOT enforced by the subcommands.
 
+    setup-user
+        Setup user permissions to use containers.
     install-base
         Install base dependencies needed by stacks with apt/yum.
     install-driver
@@ -733,12 +733,14 @@ case "$1" in
     ;;
 
   setup-system)
+    require_user
     nvlog "OS Flavor: $FLAVOR"
     nvlog "Driver detected: $DRIVER_VER"
     nvlog "Docker detected: $DOCKER_VER"
     install_base
     install_driver
     install_docker
+    docker_adduser
     ;;
 
   setup-user)
