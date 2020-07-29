@@ -6,11 +6,13 @@ This includes laptops, desktops, workstations, and cloud virtual machines.
 
 Users can work with containers, or in a local environment.
 
-To subscribe to **release notifications** watch the
+* Code repo: <https://github.com/NVIDIA/data-science-stack>
+* Report issues: <https://github.com/NVIDIA/data-science-stack/issues>
+* Release planning: <https://github.com/NVIDIA/data-science-stack/projects>
+* Subscribe to release notifications - watch the
 <https://github.com/NVIDIA/data-science-stack> repository.
-We suggest "Releases Only". Help for
-[Watching and unwatching repositories](https://help.github.com/en/github/receiving-notifications-about-activity-on-github/watching-and-unwatching-repositories)
-is available.
+We suggest "Releases Only", if you haven't subscribved before check the
+[help for watching and unwatching repositories](https://help.github.com/en/github/receiving-notifications-about-activity-on-github/watching-and-unwatching-repositories).
 
 ## Contents
 
