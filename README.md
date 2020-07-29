@@ -88,7 +88,7 @@ Docker and setup Conda in the account
 # ... use container or conda commands above
 ```
 
-### Custom Stacks
+### Creating Custom Stacks
 
 Creating custom environments is covered in the
 [Custom Data Science Stack Environments](environments/README.md) README.

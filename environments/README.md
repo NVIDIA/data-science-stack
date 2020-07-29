@@ -11,10 +11,21 @@ CI/CD, and for production a stable environment must be produced.
 1. Create an `environments/FOO.env` file with the libraries wanted.
 1. Run `data-science-stack pin FOO`
 1. Examine the pinned.yaml file produced and copy to the environments:
-1. `cp pinned.yaml environments/FOO.yalm`
+1. `cp pinned.yaml environments/FOO.yaml`
 
 Once pinned the environment can be used and shared without concerns
 that library versions will change over time.
+
+## Problems while pinning
+
+Satisfying the constraings in your .env file may not be possible, in which
+case the pin command will fail.
+
+To make this (very common) problem easier to solve, the command to generate
+the environment is printed right before the attempt to solve is made. Adding
+an extra `-v` or `-vv` to the command will print more debug information,
+including what constraints cannot be satiistied.
+
 
 ## File Format
 
