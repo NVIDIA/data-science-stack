@@ -29,6 +29,9 @@ We suggest "Releases Only", if you haven't subscribved before check the
 
 _For usage and command documentation: `./data-science-stack help` at any time._
 
+_Note: The script is designed to run as the user, and ask for sudo password
+when needed. Do not run it with `sudo ...`
+
 On Ubuntu 18.04:
 
 ```bash
@@ -100,6 +103,18 @@ most likely `setup-system` and one of the `build-...` commands.
 
 New environments and containers will be tagged with the version of the
 script, so the old ones will not be modified.
+
+### Testing
+
+Once Jupyter is up and running (with `run-container` or `run-jupyter`)
+navigate in the left panel to any of the sample notebooks and run them.
+The sample notebooks come from the RAPIDS notebooks repo
+<https://github.com/rapidsai/notebooks>
+
+From the command line in your environment, or inside the container, the
+`run-notebook <notebook-file>` command can also be used. Expect warnings
+since the notebooks can depend on functions only available when using
+Jupyter's web UI.
 
 ### Creating Custom Stacks
 
