@@ -51,6 +51,7 @@ install_base () {
   nvlog "START Installing base packages"
 
   # Install base apt/yum packages needed
+  set -e
   if [ $FLAVOR = "ubuntu" ]; then
     sudo apt-get -y update --fix-missing
     sudo apt-get -y upgrade
@@ -91,6 +92,7 @@ install_base () {
       which \
       yum-utils
   fi
+  set +e
 
   nvlog "END Installing base packages"
 }
@@ -219,6 +221,7 @@ install_cuda () {
     return
   fi
 
+  set -e
   if [ $FLAVOR = "ubuntu" ]; then
     curl https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-repo-ubuntu1804_10.1.243-1_amd64.deb \
      -o cuda-repo.deb
@@ -243,6 +246,7 @@ install_cuda () {
     echo "export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
     source ${HOME}/.bashrc
   fi
+  set +e
 
   nvlog "END Installing CUDA"
 }
@@ -275,6 +279,7 @@ install_docker () {
     fi
   fi
 
+  set -e
   if [ $FLAVOR = "ubuntu" ]; then
     # NVIDIA Repo
     distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
@@ -319,6 +324,7 @@ install_docker () {
     sudo groupadd -f docker
     sudo systemctl restart docker
   fi
+  set +e
 
   nvlog "END Installing Docker and NVIDIA Container Toolkit"
 }
