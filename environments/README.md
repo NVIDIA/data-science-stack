@@ -24,8 +24,7 @@ case the pin command will fail.
 To make this (very common) problem easier to solve, the command to generate
 the environment is printed right before the attempt to solve is made. Adding
 an extra `-v` or `-vv` to the command will print more debug information,
-including what constraints cannot be satiistied.
-
+including what constraints cannot be satisfied.
 
 ## File Format
 

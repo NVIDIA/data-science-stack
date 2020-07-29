@@ -7,6 +7,7 @@ This includes laptops, desktops, workstations, and cloud virtual machines.
 Users can work with containers, or in a local environment.
 
 * Code repo: <https://github.com/NVIDIA/data-science-stack>
+* Releases: <https://github.com/NVIDIA/data-science-stack/releases>
 * Report issues: <https://github.com/NVIDIA/data-science-stack/issues>
 * Release planning: <https://github.com/NVIDIA/data-science-stack/projects>
 * Subscribe to release notifications - watch the
@@ -87,6 +88,18 @@ Docker and setup Conda in the account
 ./data-science-stack setup-user
 # ... use container or conda commands above
 ```
+
+### Upgrading
+
+The script is designed to detect old versions of dependencies and upgrade
+them, and create new environments/containers.
+
+To upgrade get the new version of the script and environment configs with
+`git pull` or with a new release .zip, and run the install steps again -
+most likely `setup-system` and one of the `build-...` commands.
+
+New environments and containers will be tagged with the version of the
+script, so the old ones will not be modified.
 
 ### Creating Custom Stacks
 
