@@ -152,7 +152,7 @@ Customer Portal using Red Hat Subscription-Manager for further information -
 ## Installing the NVIDIA GPU Driver
 
 It is important that updated NVIDIA drivers are installed on the system.
-The minimum version of the NVIDIA driver supported is 440.33.
+The minimum version of the NVIDIA driver supported is 450.51.06.
 More recent drivers may be available, but may not have been tested with the
 data science stacks.
 
@@ -254,8 +254,8 @@ Download and install the driver:
 
 ```bash
 # Check for the latest before using - https://www.nvidia.com/Download/index.aspx
-wget http://us.download.nvidia.com/XFree86/Linux-x86_64/440.44/NVIDIA-Linux-x86_64-440.44.run
-sudo sh ./NVIDIA-Linux-x86_64-440.44.run
+wget http://us.download.nvidia.com/XFree86/Linux-x86_64/450.57/NVIDIA-Linux-x86_64-450.57.run
+sudo sh ./NVIDIA-Linux-x86_64-450.57.run
 ```
 
 > **Note**: In some cases the following prompts will occur:
