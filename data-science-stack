@@ -700,7 +700,7 @@ Environment Pinning Commands (for stack maintainers):
         Generates a <environment-name>-pinned.yaml file based on the
         "./environments/<environment-name>.env" file.
         Default <environment-name> is "${DEFAULT_ENVIRONMENT}".
-        See environments/READ.md for more info.
+        See environments/README.md for more information and debugging.
     pin-clean
         Cleans up temporary files and containers from pinning process.
 
