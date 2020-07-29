@@ -892,7 +892,7 @@ case "$1" in
       conda create --name snapper --override-channels \
       ${ENV_COMMAND} --dry-run" | tr "\n" " " | tr -s [:space:] " ")
     nvlog "${CMD}"
-    nvlog "This may take a while..."
+    nvlog "This will take a while..."
     if ${CMD} --json > ${PIN_TMP}
     then
       echo -e "# GENERATED FILE DO NOT EDIT\nchannels:" > ${PIN_OUT}
