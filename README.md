@@ -487,6 +487,21 @@ Reboot the system
 sudo reboot
 ```
 
+
+## Troubleshooting FAQ
+
+**The driver does not install correctly**
+
+Try using `purge-driver` followed by `install-driver`, then check with
+`diagnostics`. If the driver was previously installed with a.run file the
+script will let you know how to remove the old driver.
+
+**How much disk space is needed?**
+
+About 30GB free should be enough. A lot of space is needed during
+environment/container creation since Conda has a package cache.
+
+
 ## More Information
 
 * [NVIDIA Accelerated Data Science](https://www.nvidia.com/en-us/deep-learning-ai/solutions/data-science/)
