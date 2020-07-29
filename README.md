@@ -64,6 +64,8 @@ This creates and runs Jupyter in the container. Users can then connect
 with the Jupyter notebook running at <http://localhost:8888/>
 Control-C to exit.
 
+The reverse of `build-container` is `purge-container`.
+
 For information about Docker refer to <https://docs.docker.com/>
 
 ### Option 2 - In a Local Conda Environment (Recommended for inital development work)
@@ -77,6 +79,8 @@ For information about Docker refer to <https://docs.docker.com/>
 This creates the local environment and runs Jupyter. Users can then connect
 with the Jupyter notebook at the address and token output by Jupyter.
 Control-C to exit.
+
+The reverse of `build-conda-env` is `purge-conda-env`.
 
 For information about Conda environments refer to
 <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>
@@ -103,6 +107,11 @@ most likely `setup-system` and one of the `build-...` commands.
 
 New environments and containers will be tagged with the version of the
 script, so the old ones will not be modified.
+
+Environments and containers are large, to clean up old ones use:
+
+* Containers - `docker images` and `docker rmi ...`
+* Local Conda environments - `conda env list` and `conda env remove ...`
 
 ### Testing
 
