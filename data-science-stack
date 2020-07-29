@@ -6,7 +6,7 @@
 STACK_VERSION=2.4.0-dev
 NOTEBOOKS_VERSION=0.14
 
-MIN_DRIVER=440.33.0
+MIN_DRIVER=450.51.06
 MIN_CUDA=10.1.243
 MIN_DOCKER=19.03.4
 MIN_CONDA=4.8.3
@@ -142,7 +142,8 @@ EOF
     sudo add-apt-repository -y ppa:graphics-drivers/ppa
     sudo apt-get -y update
     sudo apt-get -y upgrade
-    sudo apt-get -y install nvidia-driver-440
+    sudo apt-get -y install nvidia-driver-450
+    sudo apt-get autoremove
     REBOOT=1
   else
     nvlog "Automated NVIDIA driver install on Red Hat is not supported."
