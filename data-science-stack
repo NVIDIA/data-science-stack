@@ -722,8 +722,6 @@ Other Subcommands:
   These subcommands run parts of the above commands, and should be used with
   caution as the ordering and dependecies ARE NOT enforced by the subcommands.
 
-    setup-user
-        Setup user permissions to use containers.
     install-base
         Install base dependencies needed by stacks with apt/yum.
     install-driver
@@ -732,8 +730,9 @@ Other Subcommands:
         Purge the NVIDIA GPU driver from the system, before a clean reinstall.
     install-docker
         Install Docker CE v${MIN_DOCKER}+.
-    docker-adduser
-        Add the current user to the docker group.
+    setup-user
+        Setup user permissions to use docker. Useful when multiple users
+        use a machine. Normal done by setup-system for first user.
     install-cuda
         Install the NVIDIA CUDA Toolkit v${MIN_CUDA}+
     install-miniconda
@@ -795,11 +794,6 @@ case "$1" in
     docker_adduser
     ;;
 
-  setup-user)
-    require_user
-    docker_adduser
-    ;;
-
   build-container)
     ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
     build_container
@@ -849,8 +843,7 @@ case "$1" in
   install-docker)
     install_docker
     ;;
-
-  docker-adduser)
+  setup-user)
     require_user
     docker_adduser
     ;;
