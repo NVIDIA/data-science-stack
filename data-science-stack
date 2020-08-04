@@ -414,7 +414,7 @@ install_miniconda () {
     nvlog "Conda is new enough"
     nvlog "END Install Miniconda"
     return
-  elif [ $? -ne 0 ]; then
+  elif [ $CONDA_VER -ne 0 ]; then
     nvlog
     nvlog "ERROR: Conda is installed but older, please update conda environment"
     nvlog "Try 'conda update -n base -c defaults conda'"
@@ -434,6 +434,7 @@ install_miniconda () {
   curl https://repo.anaconda.com/miniconda/Miniconda3-py37_$MIN_CONDA-Linux-x86_64.sh -o miniconda.sh
   chmod +x miniconda.sh
   ./miniconda.sh -bf -p ${CONDA_ROOT}  # Use the existing Conda
+  rm -f ./miniconda.sh
 
   echo "export PATH=${CONDA_ROOT}/bin:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
   source ${HOME}/.bashrc
