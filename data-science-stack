@@ -63,6 +63,7 @@ install_base () {
       git \
       gcc \
       g++ \
+      jq \
       npm \
       screen \
       tzdata \
@@ -84,6 +85,7 @@ install_base () {
       file \
       git \
       graphviz \
+      jq \
       lvm2 \
       npm \
       screen \
