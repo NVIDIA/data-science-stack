@@ -189,6 +189,12 @@ EOF
 purge_driver () {
   nvlog "START Purge Driver"
 
+  if [ $FLAVOR != "ubuntu" ]; then
+    nvlog "ERROR: Automated NVIDIA driver purge for Red Hat not supported."
+    nvlog "Please run /usr/bin/nvidia-uninstall and reboot to remove driver."
+    exit
+  fi
+
   cat << EOF
 
 WARNING:
@@ -208,22 +214,16 @@ EOF
     nvlog "Aborting - doing nothing"
   fi
 
-
-  if [ $FLAVOR = "ubuntu" ]; then
-    if [ -f /usr/bin/nvidia-uninstall ]; then
-      nvlog "Running /usr/bin/nvidia-uninstall first."
-      sudo /usr/bin/nvidia-uninstall
-    fi
-    sudo apt -y purge nvidia-*
-    sudo apt -y autoremove
-    sudo rm -f /etc/modprobe.d/blacklist-nouveau.conf
-    sudo rm -f /etc/modprobe.d/nvidia-installer-disable-nouveau.conf
-    sudo update-initramfs -k all -u
-    REBOOT=1
-  else
-    nvlog "ERROR: Automated NVIDIA driver purge for Red Hat not supported."
-    exit
+  if [ -f /usr/bin/nvidia-uninstall ]; then
+    nvlog "Running /usr/bin/nvidia-uninstall first."
+    sudo /usr/bin/nvidia-uninstall
   fi
+  sudo apt -y purge nvidia-*
+  sudo apt -y autoremove
+  sudo rm -f /etc/modprobe.d/blacklist-nouveau.conf
+  sudo rm -f /etc/modprobe.d/nvidia-installer-disable-nouveau.conf
+  sudo update-initramfs -k all -u
+  REBOOT=1
 
   nvlog "END Purge Driver"
 }
@@ -457,7 +457,7 @@ install_miniconda () {
     nvlog "Conda is new enough"
     nvlog "END Install Miniconda"
     return
-  elif [ $CONDA_VER -ne 0 ]; then
+  elif [ $CONDA_VER != 0 ]; then
     nvlog
     nvlog "ERROR: Conda is installed but older, please update conda environment"
     nvlog "Try 'conda update -n base -c defaults conda'"
@@ -467,7 +467,7 @@ install_miniconda () {
 
   if [ -d "${CONDA_ROOT}" ]; then
     nvlog
-    nvlog "ERROR: Found a ${CONDA_ROOT} directory, please move/backup before install"
+    nvlog "ERROR: Failed to detect Conda version but found a ${CONDA_ROOT} directory, please move/backup before install"
     nvlog
     exit
   fi
@@ -604,7 +604,7 @@ diagnostics () {
   nvlog "Network test"
   ping -c 1 -W 3 8.8.8.8
 
-  nvlog "Driver detected: $DRIVER_VER"
+  nvlog "Driver detected (0 means not installed): $DRIVER_VER"
   nvlog "NVIDIA SMI:"
   if [ -f /usr/bin/nvidia-smi ]; then
     /usr/bin/nvidia-smi
@@ -612,15 +612,15 @@ diagnostics () {
     echo "nvidia-smi not found, NVIDIA GPU Driver not installed correctly."
   fi
 
-  nvlog "CUDA detected: $CUDA_VER"
-  nvlog "Docker detected: $DOCKER_VER"
+  nvlog "CUDA detected (0 means not installed): $CUDA_VER"
+  nvlog "Docker detected (0 means not installed): $DOCKER_VER"
 
   nvlog "Shared libraries:"
   ldconfig -p | grep 'nvidia\|libnv\|cuda\|libcu'
 
   nvlog "Notebooks directory: $NOTEBOOKS_DIR"
-  nvlog "Conda detected: $CONDA_VER"
-  nvlog "Conda root: $CONDA_ROOT"
+  nvlog "Conda detected (0 means not installed): $CONDA_VER"
+  nvlog "Target Conda root: $CONDA_ROOT"
   semver_gte $CONDA_VER $MIN_CONDA
   if [ $? -eq 1 ]; then
     nvlog "Conda packages:"
@@ -770,13 +770,16 @@ Other Subcommands:
         Install base dependencies needed by stacks with apt/yum.
     install-driver
         Install the NVIDIA GPU driver v${MIN_DRIVER}+.
+        Automated install not supported on Red Hat.
     purge-driver
         Purge the NVIDIA GPU driver from the system, before a clean reinstall.
+        Automated purge not supported on Red Hat.
     install-docker
         Install Docker CE v${MIN_DOCKER}+.
     setup-user
         Setup user permissions to use docker. Useful when multiple users
         use a machine. Normal done by setup-system for first user.
+        The user must have sudo permision.
     install-cuda
         Install the NVIDIA CUDA Toolkit v${MIN_CUDA}+
     install-miniconda
