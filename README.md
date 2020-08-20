@@ -229,7 +229,6 @@ sudo reboot
 > Now you should be able to run `yum upgrade kernel`
 
 ```bash
-sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 sudo yum install -y kernel-devel kernel-headers gcc dkms acpid libglvnd
 ```
 
