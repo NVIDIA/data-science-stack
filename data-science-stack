@@ -17,8 +17,16 @@ DEFAULT_ENVIRONMENT="data-science-stack"
 
 CONDA_ROOT=${HOME}/conda
 NOTEBOOKS_DIR=${HOME}/data-science-stack-${STACK_VERSION}
+
 if [ -f /etc/redhat-release ]; then
-  FLAVOR="redhat"
+  if grep -q -i "release 7" /etc/redhat-release ; then
+    FLAVOR="redhat7"
+  elif grep -q -i "release 8" /etc/redhat-release ; then
+    FLAVOR="redhat8"
+  else
+    echo "Only Red Hat 7.x and 8.x flavors supported."
+    exit
+  fi
 else
   FLAVOR="ubuntu"
 fi
@@ -69,7 +77,7 @@ install_base () {
       tzdata \
       wget \
       zlib1g-dev
-  else
+  elif [ $FLAVOR = "redhat7" ]; then
     sudo subscription-manager repos --enable rhel-7-workstation-devtools-rpms
     sudo subscription-manager repos --enable rhel-7-workstation-optional-rpms
     sudo subscription-manager repos --enable rhel-7-workstation-extras-rpms
@@ -82,6 +90,25 @@ install_base () {
       curl \
       device-mapper-persistent-data \
       devtoolset-4 \
+      file \
+      git \
+      graphviz \
+      jq \
+      lvm2 \
+      npm \
+      screen \
+      vim \
+      wget \
+      which \
+      yum-utils
+  else # RHEL 8
+    sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm || true
+    sudo yum groupinstall -y 'Development Tools'
+    sudo yum install -y \
+      bzip2 \
+      clang \
+      curl \
+      device-mapper-persistent-data \
       file \
       git \
       graphviz \
@@ -237,8 +264,13 @@ install_cuda () {
     echo "export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
     source ${HOME}/.bashrc
   else
-    curl https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-10.1.243-1.x86_64.rpm \
-     -o cuda-repo.rpm
+    if [ $FLAVOR = "redhat7" ]; then
+      curl https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-10.1.243-1.x86_64.rpm \
+        -o cuda-repo.rpm
+    else
+      curl https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-repo-rhel8-10.1.243-1.x86_64.rpm \
+        -o cuda-repo.rpm
+    fi
     sudo rpm -i cuda-repo.rpm || true
     sudo yum clean all
     sudo yum install -y cuda-toolkit-10-1
@@ -306,13 +338,11 @@ install_docker () {
     sudo systemctl start docker
     sudo groupadd -f docker
     sudo systemctl restart docker
-  else
+  elif [ $FLAVOR = "redhat7" ]; then
     # NVIDIA Repos
     distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
     curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.repo | \
       sudo tee /etc/yum.repos.d/nvidia-docker.repo
-    curl -s -L https://nvidia.github.io/nvidia-container-runtime/$distribution/nvidia-container-runtime.repo | \
-      sudo tee /etc/yum.repos.d/nvidia-container-runtime.repo
     # Docker Repo
     sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 
@@ -323,6 +353,25 @@ install_docker () {
       containerd.io
     sudo systemctl enable docker
     sudo systemctl start docker
+    sudo groupadd -f docker
+    sudo systemctl restart docker
+  else # RHEL 8
+    # NVIDIA Repos
+    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.repo | \
+      sudo tee /etc/yum.repos.d/nvidia-docker.repo
+    # Docker Repo
+    sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+    # force new-enough containerd.io
+    curl -s https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.13-3.2.el7.x86_64.rpm \
+      --output containerd.rpm
+    sudo yum localinstall -y containerd.rpm
+    rm containerd.rpm
+
+    sudo yum install -y \
+      docker-ce \
+      nvidia-container-toolkit
     sudo groupadd -f docker
     sudo systemctl restart docker
   fi
@@ -341,18 +390,10 @@ docker_adduser () {
   fi
 
   nvlog "Adding user '$USER' to docker group"
-  if [ $FLAVOR = "ubuntu" ]; then
-    sudo usermod -aG docker $USER
-    sudo setfacl -m user:$USER:rw /var/run/docker.sock
-    sudo systemctl daemon-reload
-    sudo systemctl reload docker
-  else
-    sudo usermod -aG docker $USER
-    sudo setfacl -m user:$USER:rw /var/run/docker.sock
-    sudo systemctl daemon-reload
-    sudo systemctl reload docker
-  fi
-
+  sudo usermod -aG docker $USER
+  sudo setfacl -m user:$USER:rw /var/run/docker.sock
+  sudo systemctl daemon-reload
+  sudo systemctl reload docker
   LOGOUT=1
 
   nvlog "END Add User to Docker Group"
