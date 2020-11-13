@@ -3,10 +3,10 @@
 # Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 
 # Global Paramaters
-STACK_VERSION=2.4.0
-NOTEBOOKS_VERSION=0.14
+STACK_VERSION=2.5.0-dev
+NOTEBOOKS_VERSION=0.16
 
-MIN_DRIVER=450.51.06
+MIN_DRIVER=455.23.04
 MIN_CUDA=10.1.243
 MIN_DOCKER=19.03.4
 MIN_CONDA=4.8.3
@@ -14,6 +14,7 @@ MIN_CONDA=4.8.3
 SCRIPT_NAME=$(basename $0)
 RUNFROM=$(dirname $(readlink -f $0))
 DEFAULT_ENVIRONMENT="data-science-stack"
+LOGFILE=data-science-stack.log
 
 CONDA_ROOT=${HOME}/conda
 NOTEBOOKS_DIR=${HOME}/data-science-stack-${STACK_VERSION}
@@ -169,18 +170,20 @@ EOF
     return
   fi
 
+  set -e
   if [ $FLAVOR = "ubuntu" ]; then
     sudo add-apt-repository -y ppa:graphics-drivers/ppa
     sudo apt-get -y update
     sudo apt-get -y upgrade
-    sudo apt-get -y install nvidia-driver-450
-    sudo apt-get autoremove
+    sudo apt-get -y install nvidia-driver-455
+    sudo apt-get -y autoremove
     REBOOT=1
   else
     nvlog "Automated NVIDIA driver install on Red Hat is not supported."
     nvlog "Please install NVIDIA driver $MIN_DRIVER or newer and run again."
     exit
   fi
+  set +e
 
   nvlog "END Installing Driver"
 }
@@ -218,7 +221,7 @@ EOF
     nvlog "Running /usr/bin/nvidia-uninstall first."
     sudo /usr/bin/nvidia-uninstall
   fi
-  sudo apt -y purge nvidia-*
+  sudo apt-get -y purge nvidia-*
   sudo apt -y autoremove
   sudo rm -f /etc/modprobe.d/blacklist-nouveau.conf
   sudo rm -f /etc/modprobe.d/nvidia-installer-disable-nouveau.conf
@@ -372,6 +375,8 @@ install_docker () {
     sudo yum install -y \
       docker-ce \
       nvidia-container-toolkit
+    sudo systemctl enable docker
+    sudo systemctl start docker
     sudo groupadd -f docker
     sudo systemctl restart docker
   fi
@@ -389,12 +394,14 @@ docker_adduser () {
     return
   fi
 
+  set -e
   nvlog "Adding user '$USER' to docker group"
   sudo usermod -aG docker $USER
   sudo setfacl -m user:$USER:rw /var/run/docker.sock
   sudo systemctl daemon-reload
   sudo systemctl reload docker
   LOGOUT=1
+  set +e
 
   nvlog "END Add User to Docker Group"
 }
@@ -417,6 +424,7 @@ build_container () {
   rm -r $TEMPDIR
 
   nvlog "END Building Container"
+  nvlog "Next you can run: ${SCRIPT_NAME} run-container"
 }
 
 
@@ -472,6 +480,7 @@ install_miniconda () {
     exit
   fi
 
+  set -e
   mkdir -p ${HOME}/.conda
 
   curl https://repo.anaconda.com/miniconda/Miniconda3-py37_$MIN_CONDA-Linux-x86_64.sh -o miniconda.sh
@@ -486,6 +495,7 @@ install_miniconda () {
   source ${HOME}/.bashrc
 
   LOGOUT=1
+  set +e
 
   nvlog "END Install Miniconda"
 }
@@ -512,6 +522,7 @@ create_conda_env () {
       jupyterlab-nvdashboard
 
   nvlog "END Setup Conda Env"
+  nvlog "Next you can run: ${SCRIPT_NAME} run-jupyter"
 }
 
 
@@ -538,6 +549,7 @@ purge_conda_env () {
 install_notebooks () {
   nvlog "Start Install Notebooks"
 
+  set -e
   nvlog "Installing Notebooks to ${NOTEBOOKS_DIR}/"
   if [ ! -d "${NOTEBOOKS_DIR}" ]; then
     mkdir -p ${NOTEBOOKS_DIR}
@@ -553,6 +565,7 @@ install_notebooks () {
   git submodule update --init --remote
   rm -rf .git
   rm -rf `find repos/ -maxdepth 2 -mindepth 2 | grep -v notebooks`
+  set +e
 
   nvlog "END Install Notebooks"
 }
@@ -799,7 +812,7 @@ Other Subcommands:
 EOF
 }
 
-
+(
 detect_driver
 detect_cuda
 detect_docker
@@ -985,3 +998,5 @@ if [ $LOGOUT -ne 0 ]; then
   notify_logout
   exit
 fi
+
+)2>&1 | tee -a $LOGFILE
