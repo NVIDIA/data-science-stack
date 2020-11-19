@@ -539,6 +539,15 @@ script will let you know how to remove the old driver.
 About 30GB free should be enough. A lot of space is needed during
 environment/container creation since Conda has a package cache.
 
+**The script is failing after it cannot reach URLs or download files**
+
+To setup the Data Science Stack the script needs to update the OS and other
+installed packages, install software from NVIDIA, setup Docker and pull
+containers, download Conda packages, clone repos from GitHub, and other tasks.
+During this process if the network is down, the the OS or IT firewalls are
+blocking any of those hosts errors will occur. Retrying the command will
+work in most cases after the problem/block is resolved.
+
 
 ## More Information
 
