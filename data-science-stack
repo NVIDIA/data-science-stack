@@ -134,6 +134,9 @@ detect_driver () {
     if [ $? -ne 0 ]; then
       DRIVER_VER=0
     fi
+    if [ $DRIVER_VER = "Failed" ]; then
+      DRIVER_VER=0
+    fi
   else
     DRIVER_VER=0
   fi
