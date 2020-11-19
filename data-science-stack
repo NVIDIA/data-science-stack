@@ -722,7 +722,7 @@ run_notebook () {
   NBTESTSCRIPT=/tmp/${NBNAME}-test.py
   TEMPFILE=$(mktemp)
 
-  cd $(dirname $1)
+  pushd $(dirname $1)
 
   jupyter nbconvert --to script ${NBFILENAME} --output /tmp/${NBNAME}-test
   echo "${NOTEBOOK_OVERRIDE_CODE}" > ${TEMPFILE}
@@ -735,6 +735,8 @@ run_notebook () {
   nvlog "EXIT CODE: ${NBEXITCODE}"
   rm -f $TEMPFILE
   rm -f $NBTESTSCRIPT
+
+  popd
 
   nvlog "END running $1"
 }
@@ -795,6 +797,9 @@ Notebook Commands:
 
     run-notebook <notebook-name.ipynb>
         Run a notebook in the terminal, time it, and display exit code.
+    run-notebook-dir <notebook-directory>
+        Runs all the notebooks in a directory tree like the run-notebook
+        command does.
 
 Other Subcommands:
 
@@ -1001,6 +1006,21 @@ case "$1" in
       nvlog "Usage: ${SCRIPT_NAME} run-notebook <notebook-file>"
     fi;
     run_notebook $2
+    ;;
+
+  run-notebook-dir)
+    if [ $# -ne 2 ]; then
+      nvlog "Usage: ${SCRIPT_NAME} run-notebook-dir <notebook-directory>"
+    fi;
+    cd $2
+    for nb in $(find . -name "*.ipynb"); do
+      # Skip all NBs that use dask (in the code or even in their name)
+      if ((echo ${nb}|grep -qi dask) || (grep -q dask ${nb})); then
+        nvlog "SKIPPING: ${nb} (suspected Dask usage, not currently automatable)"
+      else
+        run_notebook ${nb}
+      fi
+    done
     ;;
 
   help)
