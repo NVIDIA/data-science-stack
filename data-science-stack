@@ -7,7 +7,7 @@ STACK_VERSION=2.5.0-dev
 NOTEBOOKS_VERSION=0.16
 
 MIN_DRIVER=455.23.04
-MIN_CUDA=10.1.243
+MIN_CUDA=11.0.228
 MIN_DOCKER=19.03.4
 MIN_CONDA=4.8.3
 
@@ -265,32 +265,44 @@ install_cuda () {
 
   set -e
   if [ $OS_FLAVOR = "ubuntu" ]; then
-    curl https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-repo-ubuntu1804_10.1.243-1_amd64.deb \
-     -o cuda-repo.deb
-    sudo dpkg -i cuda-repo.deb
-    sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
-    sudo apt-get update
-    sudo apt-get -y install cuda-toolkit-10-1
-    rm -f cuda-repo.deb
+    if [ $OS_RELEASE = "18.04" ]; then
+      curl https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin \
+        -o cuda.pin
+      sudo mv cuda.pin /etc/apt/preferences.d/cuda-repository-pin-600
+      sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+      sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
+      sudo apt-get update
+      sudo apt-get -y install cuda-toolkit-11-0
 
-    echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-    echo "export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-    source ${HOME}/.bashrc
+      echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+      echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+      source ${HOME}/.bashrc
+    else
+      curl https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin \
+        -o cuda.pin
+      sudo mv cuda.pin /etc/apt/preferences.d/cuda-repository-pin-600
+      sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
+      sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
+      sudo apt-get update
+      sudo apt-get -y install cuda-toolkit-11-0
+
+      echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+      echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+      source ${HOME}/.bashrc
+    fi
   else
     if [ $OS_FLAVOR = "redhat7" ]; then
-      curl https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-10.1.243-1.x86_64.rpm \
-        -o cuda-repo.rpm
+      sudo yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
+      sudo yum clean all
+      sudo yum install -y cuda-toolkit-11-0
     else
-      curl https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-repo-rhel8-10.1.243-1.x86_64.rpm \
-        -o cuda-repo.rpm
+      sudo dnf config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
+      sudo dnf clean all
+      sudo dnf -y install cuda-toolkit-11-0
     fi
-    sudo rpm -i cuda-repo.rpm || true
-    sudo yum clean all
-    sudo yum install -y cuda-toolkit-10-1
-    rm -f cuda-repo.rpm
 
     echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-    echo "export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+    echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
     source ${HOME}/.bashrc
   fi
   set +e
