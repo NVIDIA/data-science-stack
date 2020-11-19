@@ -21,15 +21,22 @@ NOTEBOOKS_DIR=${HOME}/data-science-stack-${STACK_VERSION}
 
 if [ -f /etc/redhat-release ]; then
   if grep -q -i "release 7" /etc/redhat-release ; then
-    FLAVOR="redhat7"
+    OS_FLAVOR="redhat7"
+    OS_RELEASE=7
   elif grep -q -i "release 8" /etc/redhat-release ; then
-    FLAVOR="redhat8"
+    OS_FLAVOR="redhat8"
+    OS_RELEASE=8
   else
     echo "Only Red Hat 7.x and 8.x flavors supported."
     exit
   fi
 else
-  FLAVOR="ubuntu"
+  OS_FLAVOR="ubuntu"
+  OS_RELEASE=$(lsb_release -r | awk '{print $2}')
+  if [ $OS_RELEASE != "18.04" ] && [ $OS_RELEASE != "20.04" ]; then
+    echo "Only Ubuntu 18.04 and 20.04 supported."
+    exit
+  fi
 fi
 
 PIN_CONTAINER="frolvlad/alpine-miniconda3:python3.7"
@@ -61,7 +68,7 @@ install_base () {
 
   # Install base apt/yum packages needed
   set -e
-  if [ $FLAVOR = "ubuntu" ]; then
+  if [ $OS_FLAVOR = "ubuntu" ]; then
     sudo apt-get -y update --fix-missing
     sudo apt-get -y upgrade
     sudo apt-get -y install --no-install-recommends apt-utils
@@ -78,7 +85,7 @@ install_base () {
       tzdata \
       wget \
       zlib1g-dev
-  elif [ $FLAVOR = "redhat7" ]; then
+  elif [ $OS_FLAVOR = "redhat7" ]; then
     sudo subscription-manager repos --enable rhel-7-workstation-devtools-rpms
     sudo subscription-manager repos --enable rhel-7-workstation-optional-rpms
     sudo subscription-manager repos --enable rhel-7-workstation-extras-rpms
@@ -146,7 +153,7 @@ detect_driver () {
 install_driver () {
   nvlog "START Installing Driver"
 
-  if [ $FLAVOR = "ubuntu" ]; then
+  if [ $OS_FLAVOR = "ubuntu" ]; then
     if [ -f /usr/bin/nvidia-uninstall ]; then
       cat << EOF
 
@@ -174,7 +181,7 @@ EOF
   fi
 
   set -e
-  if [ $FLAVOR = "ubuntu" ]; then
+  if [ $OS_FLAVOR = "ubuntu" ]; then
     sudo add-apt-repository -y ppa:graphics-drivers/ppa
     sudo apt-get -y update
     sudo apt-get -y upgrade
@@ -195,7 +202,7 @@ EOF
 purge_driver () {
   nvlog "START Purge Driver"
 
-  if [ $FLAVOR != "ubuntu" ]; then
+  if [ $OS_FLAVOR != "ubuntu" ]; then
     nvlog "ERROR: Automated NVIDIA driver purge for Red Hat not supported."
     nvlog "Please run /usr/bin/nvidia-uninstall and reboot to remove driver."
     exit
@@ -257,7 +264,7 @@ install_cuda () {
   fi
 
   set -e
-  if [ $FLAVOR = "ubuntu" ]; then
+  if [ $OS_FLAVOR = "ubuntu" ]; then
     curl https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-repo-ubuntu1804_10.1.243-1_amd64.deb \
      -o cuda-repo.deb
     sudo dpkg -i cuda-repo.deb
@@ -270,7 +277,7 @@ install_cuda () {
     echo "export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
     source ${HOME}/.bashrc
   else
-    if [ $FLAVOR = "redhat7" ]; then
+    if [ $OS_FLAVOR = "redhat7" ]; then
       curl https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-10.1.243-1.x86_64.rpm \
         -o cuda-repo.rpm
     else
@@ -306,7 +313,7 @@ install_docker () {
   if [ $? -eq 1 ]; then
     nvlog "Docker is new enough, checking for nvidia-docker2..."
 
-    if [ $FLAVOR = "ubuntu" ]; then
+    if [ $OS_FLAVOR = "ubuntu" ]; then
       nvd2=$(dpkg -l | grep nvidia-docker2 | grep ii)
     else
       nvd2=$(yum list installed | grep nvidia-docker2)
@@ -320,7 +327,7 @@ install_docker () {
   fi
 
   set -e
-  if [ $FLAVOR = "ubuntu" ]; then
+  if [ $OS_FLAVOR = "ubuntu" ]; then
     # NVIDIA Repo
     distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
     curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
@@ -344,7 +351,7 @@ install_docker () {
     sudo systemctl start docker
     sudo groupadd -f docker
     sudo systemctl restart docker
-  elif [ $FLAVOR = "redhat7" ]; then
+  elif [ $OS_FLAVOR = "redhat7" ]; then
     # NVIDIA Repos
     distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
     curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.repo | \
@@ -604,7 +611,8 @@ diagnostics () {
   nvlog "START Diagnostics"
 
   nvlog "Run as: $USER"
-  nvlog "OS Flavor: $FLAVOR"
+  nvlog "OS Flavor: $OS_FLAVOR"
+  nvlog "OS Release: $OS_RELEASE"
   if [ -f /usr/bin/lsb_release ]; then
     nvlog "lsb_release:"
     /usr/bin/lsb_release -r -d
@@ -848,7 +856,7 @@ case "$1" in
 
   setup-system)
     require_user
-    nvlog "OS Flavor: $FLAVOR"
+    nvlog "OS Flavor: $OS_FLAVOR"
     nvlog "Driver detected: $DRIVER_VER"
     nvlog "Docker detected: $DOCKER_VER"
     install_base
