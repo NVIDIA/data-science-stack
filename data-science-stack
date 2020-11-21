@@ -223,20 +223,19 @@ EOF
   read -p "DANGER: Are you SURE [y/N]?" -r
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     nvlog "Starting removal..."
+    if [ -f /usr/bin/nvidia-uninstall ]; then
+      nvlog "Running /usr/bin/nvidia-uninstall first."
+      sudo /usr/bin/nvidia-uninstall
+    fi
+    sudo apt-get -y purge nvidia-*
+    sudo apt -y autoremove
+    sudo rm -f /etc/modprobe.d/blacklist-nouveau.conf
+    sudo rm -f /etc/modprobe.d/nvidia-installer-disable-nouveau.conf
+    sudo update-initramfs -k all -u
+    REBOOT=1
   else
     nvlog "Aborting - doing nothing"
   fi
-
-  if [ -f /usr/bin/nvidia-uninstall ]; then
-    nvlog "Running /usr/bin/nvidia-uninstall first."
-    sudo /usr/bin/nvidia-uninstall
-  fi
-  sudo apt-get -y purge nvidia-*
-  sudo apt -y autoremove
-  sudo rm -f /etc/modprobe.d/blacklist-nouveau.conf
-  sudo rm -f /etc/modprobe.d/nvidia-installer-disable-nouveau.conf
-  sudo update-initramfs -k all -u
-  REBOOT=1
 
   nvlog "END Purge Driver"
 }
