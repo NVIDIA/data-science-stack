@@ -758,6 +758,8 @@ install_kubernetes() {
   sudo apt-mark hold kubelet kubeadm kubectl
 
   # Init cluster w/Flannel
+  nvlog "NOTE: disabling swap (paging to disk)"
+  sudo swapoff -a
   sudo kubeadm init --pod-network-cidr 10.244.0.0/16
 
   # Setup credentials for user
@@ -812,6 +814,7 @@ WARNING:
 
 EOF
 
+  set -e
   read -p "DANGER: Are you SURE [y/N]?" -r
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     nvlog "Starting removal..."
@@ -821,9 +824,15 @@ EOF
     sudo rm -f /etc/apt/sources.list.d/kubernetes.list
     sudo rm -rf /etc/kubernetes/
     rm -rf $HOME/.kube/
+
+    read -p "Reenable swap (paging to disk)? [Y/n]?" -r
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      sudo swapon -a
+    fi
   else
     nvlog "Aborting - doing nothing"
   fi
+  set +e
 
   nvlog "END Kubernetes purge with kubeadm"
 }
