@@ -3,3 +3,4 @@ tmp.json
 *.log
 *.deb
 *.rpm
+*.txt

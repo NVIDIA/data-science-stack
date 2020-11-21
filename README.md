@@ -138,7 +138,7 @@ Creating custom environments is covered in the
   * GeForce 10xx and 20xx
 * Operating System:
   * Ubuntu 18.04.x
-  * Red Hat Enterprise Linux 7.5+ or 8.0+ (requires license)
+  * Red Hat Enterprise Linux Workstation 7.5+ or 8.0+ (requires license)
   * Other Linux distributions are NOT supported, but may work as long as
     the driver and Docker work.
 
@@ -176,7 +176,7 @@ Customer Portal using Red Hat Subscription-Manager for further information -
 ## Installing the NVIDIA GPU Driver
 
 It is important that updated NVIDIA drivers are installed on the system.
-The minimum version of the NVIDIA driver supported is 450.51.06.
+The minimum version of the NVIDIA driver supported is 455.23.04.
 More recent drivers may be available, but may not have been tested with the
 data science stacks.
 
@@ -277,8 +277,8 @@ Download and install the driver:
 
 ```bash
 # Check for the latest before using - https://www.nvidia.com/Download/index.aspx
-wget http://us.download.nvidia.com/XFree86/Linux-x86_64/450.57/NVIDIA-Linux-x86_64-450.57.run
-sudo sh ./NVIDIA-Linux-x86_64-450.57.run
+wget http://us.download.nvidia.com/XFree86/Linux-x86_64/455.23.04/NVIDIA-Linux-x86_64-455.23.04.run
+sudo sh ./NVIDIA-Linux-x86_64-455.23.04.run
 ```
 
 > **Note**: In some cases the following prompts will occur:
@@ -538,6 +538,15 @@ script will let you know how to remove the old driver.
 
 About 30GB free should be enough. A lot of space is needed during
 environment/container creation since Conda has a package cache.
+
+**The script is failing after it cannot reach URLs or download files**
+
+To setup the Data Science Stack the script needs to update the OS and other
+installed packages, install software from NVIDIA, setup Docker and pull
+containers, download Conda packages, clone repos from GitHub, and other tasks.
+During this process if the network is down, the the OS or IT firewalls are
+blocking any of those hosts errors will occur. Retrying the command will
+work in most cases after the problem/block is resolved.
 
 
 ## More Information

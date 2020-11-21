@@ -1,8 +1,8 @@
 # Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 
 ARG DOCKER_REPO=nvcr.io/nvidia/cuda
-ARG CUDA_VERSION=10.1
-ARG OS_FLAVOR=devel-ubuntu18.04
+ARG CUDA_VERSION=11.0
+ARG OS_FLAVOR=devel-ubuntu20.04
 FROM ${DOCKER_REPO}:${CUDA_VERSION}-${OS_FLAVOR}
 
 ENV PYTHONDONTWRITEBYTECODE=true
@@ -32,9 +32,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -y --fix-missing \
 
 # Create Base environment
 
-ARG STACK_VERSION=2.4.0
+ARG STACK_VERSION=2.5.0
 ARG CONDA_VERSION=4.8.3
-ARG RAPIDS_VERSION=0.14
+ARG RAPIDS_VERSION=0.16
 
 ENV CONDA_ROOT=/conda
 ENV NOTEBOOKS_DIR=/notebooks
