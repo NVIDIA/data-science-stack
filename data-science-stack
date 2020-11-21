@@ -742,6 +742,95 @@ run_notebook () {
 }
 
 
+install_kubernetes() {
+  nvlog "START Kubernetes install with kubeadm"
+
+  if [ $OS_FLAVOR != "ubuntu" ]; then
+    nvlog "ERROR: Automated Kubernetes install for Red Hat not supported."
+    exit
+  fi
+
+  set -e
+  sudo apt-get update && sudo apt-get install -y apt-transport-https curl
+  curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+  echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+  sudo apt-get update
+  sudo apt-get install -y kubelet kubeadm kubectl
+  sudo apt-mark hold kubelet kubeadm kubectl
+
+  # Init cluster w/Flannel
+  sudo kubeadm init --pod-network-cidr 10.244.0.0/16
+
+  # Setup credentials for user
+  mkdir -p $HOME/.kube
+  sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown -R $(id -u):$(id -g) $HOME/.kube/
+
+  # Allow scheduling on master node since there is only one node
+  kubectl taint nodes --all node-role.kubernetes.io/master-
+
+  # Flannel
+  sudo sysctl net.bridge.bridge-nf-call-iptables=1
+  kubectl apply -f \
+    https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+  # NVIDIA Device Plugin
+  kubectl create -f \
+    https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/master/nvidia-device-plugin.yml
+
+
+  # Smoke test
+  sleep 5
+  nvlog
+  nvlog
+  nvlog "Kubernetes cluster will take some time to pull images and start"
+  nvlog "but here is what's running so far (from 'kubectl get all --all-namespaces')"
+  nvlog
+  nvlog
+  kubectl get all --all-namespaces
+
+  set +e
+
+  nvlog "END Kubernetes install with kubeadm"
+}
+
+
+purge_kubernetes() {
+  nvlog "START Kubernetes purge with kubeadm"
+
+  if [ $OS_FLAVOR != "ubuntu" ]; then
+    nvlog "ERROR: Automated Kubernetes purge for Red Hat not supported."
+    exit
+  fi
+
+ cat << EOF
+
+WARNING:
+  Removing Kubernetes this way should ONLY be done if it was setup
+  with this script and the install-kubernetes command.
+
+  This will destroy the Kubernetes cluster which cannot be undone.
+
+EOF
+
+  read -p "DANGER: Are you SURE [y/N]?" -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    nvlog "Starting removal..."
+    sudo kubeadm reset
+    sudo ip link set dev flannel.1 down
+    sudo ip link delete flannel.1
+    sudo rm -f /etc/apt/sources.list.d/kubernetes.list
+    sudo rm -rf /etc/kubernetes/
+    rm -rf $HOME/.kube/
+  else
+    nvlog "Aborting - doing nothing"
+  fi
+
+  nvlog "END Kubernetes purge with kubeadm"
+}
+
+
+
 usage () {
   more << EOF
 
@@ -836,6 +925,11 @@ Other Subcommands:
     install-notebooks
         Download the RAPIDS example notebooks to:
           ${NOTEBOOKS_DIR}
+    install-kubernetes
+        Install a local Kubeternetes stack with kubeadm
+    purge-kubernetes
+        DANGER: Purge the local Kubernetes stack installed with this
+        script's install-kubernetes command.
 
 EOF
 }
@@ -1021,6 +1115,15 @@ case "$1" in
         run_notebook ${nb}
       fi
     done
+    ;;
+
+  install-kubernetes)
+    require_user
+    install_kubernetes
+    ;;
+  purge-kubernetes)
+    require_user
+    purge_kubernetes
     ;;
 
   help)
