@@ -12,7 +12,7 @@ Users can work with containers, or in a local environment.
 * Release planning: <https://github.com/NVIDIA/data-science-stack/projects>
 * Subscribe to release notifications - watch the
 <https://github.com/NVIDIA/data-science-stack> repository.
-We suggest "Releases Only", if you haven't subscribved before check the
+We suggest "Releases Only", if you haven't subscribed before check the
 [help for watching and unwatching repositories](https://help.github.com/en/github/receiving-notifications-about-activity-on-github/watching-and-unwatching-repositories).
 
 ## Contents
@@ -32,7 +32,7 @@ _For usage and command documentation: `./data-science-stack help` at any time._
 _Note: The script is designed to run as the user, and ask for sudo password
 when needed. Do not run it with `sudo ...`
 
-On Ubuntu 18.04:
+On Ubuntu 18.04 or 20.04:
 
 ```bash
 git clone github.com/NVIDIA/data-science-stack
@@ -40,13 +40,13 @@ cd data-science-stack
 ./data-science-stack setup-system
 ````
 
-On Red Hat Enterprise Linux 7.x or 8.x:
+On Red Hat Enterprise Linux Workstation 7.x or 8.x:
 
 ```bash
 git clone github.com/NVIDIA/data-science-stack
 cd data-science-stack
 ./data-science-stack setup-system
-# script will stop, manually install driver ... (instuctions below)
+# script will stop, manually install driver ... (instructions below)
 ./data-science-stack setup-system
 ```
 
@@ -64,11 +64,15 @@ This creates and runs Jupyter in the container. Users can then connect
 with the Jupyter notebook running at <http://localhost:8888/>
 Control-C to exit.
 
+To mount data or code into your contianer, see
+[How do I mount data into containers?](#How-do-i-mount-data-into-containers)
+below.
+
 The reverse of `build-container` is `purge-container`.
 
 For information about Docker refer to <https://docs.docker.com/>
 
-### Option 2 - In a Local Conda Environment (Recommended for inital development work)
+### Option 2 - In a Local Conda Environment (Recommended for initial development work)
 
 ```bash
 ./data-science-stack list
@@ -137,7 +141,7 @@ Creating custom environments is covered in the
   * Tesla P, V and T series
   * GeForce 10xx and 20xx
 * Operating System:
-  * Ubuntu 18.04.x
+  * Ubuntu 18.04 or 20.04
   * Red Hat Enterprise Linux Workstation 7.5+ or 8.0+ (requires license)
   * Other Linux distributions are NOT supported, but may work as long as
     the driver and Docker work.
@@ -146,16 +150,15 @@ Creating custom environments is covered in the
 
 Disable "Secure Boot" in the system BIOS/UEFI before installing Linux.
 
-### Ubuntu 18.04
+### Ubuntu
 
-The Data Science stacks are supported on Ubuntu LTS 18.04.1+ with the
-4.15+ kernel. Ubuntu can be downloaded from
+The Data Science stacks are supported on Ubuntu LTS 18.04.1+ or 20.04
+with the 4.15+ kernel. Ubuntu can be downloaded from
 <https://www.ubuntu.com/download/desktop>
 
-### Red Hat Enterprise Linux (RHEL)
+### Red Hat Enterprise Linux Workstation (RHEL)
 
-The Data Science stacks are supported on Red Hat Enterprise Linux (RHEL)
-version 7.5+ or 8.x.
+The Data Science stacks are supported on Red Hat Enterprise Linux Workstation(RHEL) version 7.5+ or 8.x.
 The RHEL ISO image can be downloaded with the instructions on:
 <https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/chap-download-red-hat-enterprise-linux>
 
@@ -180,7 +183,7 @@ The minimum version of the NVIDIA driver supported is 455.23.04.
 More recent drivers may be available, but may not have been tested with the
 data science stacks.
 
-### Ubuntu 18.04 Driver Install
+### Ubuntu Driver Install
 
 Driver install for Ubuntu is handled by `data-science-stack setup-system`
 so no manual install should be required.
@@ -195,7 +198,7 @@ be removed (this may have side effects, read the warnings) and reinstalled:
 # reboot
 ```
 
-### Red Hat Enterprise Linux (RHEL) Driver Install
+### Red Hat Enterprise Linux Workstation (RHEL) Driver Install
 
 Before attempting to install the driver check that the system does not
 have `/usr/bin/nvidia-uninstall` which is left by an old driver .run file.
@@ -526,28 +529,43 @@ sudo reboot
 ```
 
 
-## Troubleshooting FAQ
+## Troubleshooting and FAQ
 
-**The driver does not install correctly**
+### The driver does not install correctly
 
 Try using `purge-driver` followed by `install-driver`, then check with
 `diagnostics`. If the driver was previously installed with a.run file the
 script will let you know how to remove the old driver.
 
-**How much disk space is needed?**
+### How much disk space is needed?
 
 About 30GB free should be enough. A lot of space is needed during
 environment/container creation since Conda has a package cache.
 
-**The script is failing after it cannot reach URLs or download files**
+### The script is failing after it cannot reach URLs or download files
 
 To setup the Data Science Stack the script needs to update the OS and other
 installed packages, install software from NVIDIA, setup Docker and pull
 containers, download Conda packages, clone repos from GitHub, and other tasks.
-During this process if the network is down, the the OS or IT firewalls are
+During this process if the network is down, the OS or IT firewalls are
 blocking any of those hosts errors will occur. Retrying the command will
 work in most cases after the problem/block is resolved.
 
+### How do I mount data into containers?
+
+To mount code or data directories into your running container, add additional
+`-v "/host/path/:/mount/location"` parameters to the `docker run ...` command.
+ The latest command to run the container is displayed by
+`./data-science-stack run-container` when it runs.
+
+For example to mount ~/notebooks and /data directories in as
+/notebooks and /data volumes the Docker command would begin with
+````bash
+docker run -v ~/notebooks:/notebooks -v /data:/data ...
+````
+
+For information about Docker mounts refer to
+<https://docs.docker.com/storage/bind-mounts/>
 
 ## More Information
 

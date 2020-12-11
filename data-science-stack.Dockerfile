@@ -32,7 +32,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -y --fix-missing \
 
 # Create Base environment
 
-ARG STACK_VERSION=2.5.0
+ARG STACK_VERSION=2.5.1
 ARG CONDA_VERSION=4.8.3
 ARG RAPIDS_VERSION=0.16
 

@@ -3,7 +3,7 @@
 # Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 
 # Global Paramaters
-STACK_VERSION=2.5.0
+STACK_VERSION=2.5.1
 NOTEBOOKS_VERSION=0.16
 
 MIN_DRIVER=455.23.04
@@ -855,7 +855,7 @@ Information Commands:
     list
         List the available environments.
     diagnostics
-        Display stack sofware versions and info.
+        Display stack software versions and info.
 
 Setup Commands:
 
@@ -902,7 +902,8 @@ Other Subcommands:
 
   WARNING:
   These subcommands run parts of the above commands, and should be used with
-  caution as the ordering and dependecies ARE NOT enforced by the subcommands.
+  caution as the ordering and dependencies ARE NOT currently enforced by
+  the subcommands.
 
     install-base
         Install base dependencies needed by stacks with apt/yum.
@@ -917,7 +918,7 @@ Other Subcommands:
     setup-user
         Setup user permissions to use docker. Useful when multiple users
         use a machine. Normal done by setup-system for first user.
-        The user must have sudo permision.
+        The user must have sudo permission.
     install-cuda
         Install the NVIDIA CUDA Toolkit v${MIN_CUDA}+
     install-miniconda
@@ -934,7 +935,7 @@ Other Subcommands:
         Download the RAPIDS example notebooks to:
           ${NOTEBOOKS_DIR}
     install-kubernetes
-        Install a local Kubeternetes stack with kubeadm
+        Install a local Kubernetes stack with kubeadm
     purge-kubernetes
         DANGER: Purge the local Kubernetes stack installed with this
         script's install-kubernetes command.
