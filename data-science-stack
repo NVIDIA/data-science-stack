@@ -536,7 +536,6 @@ create_conda_env () {
   fi
 
   source ${CONDA_ROOT}/bin/activate ${ENVIRONMENT_NAME}-${STACK_VERSION} ; \
-    pip install jupyterlab-nvdashboard ; \
     jupyter labextension install -y --clean \
       @jupyter-widgets/jupyterlab-manager \
       jupyter-threejs \
