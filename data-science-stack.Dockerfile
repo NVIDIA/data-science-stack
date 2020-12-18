@@ -32,7 +32,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -y --fix-missing \
 
 # Create Base environment
 
-ARG STACK_VERSION=2.5.1
+ARG STACK_VERSION=2.6.0
 ARG CONDA_VERSION=4.8.3
 ARG RAPIDS_VERSION=0.16
 
@@ -65,7 +65,6 @@ RUN ${CONDA_ROOT}/bin/conda env create -n data-science-stack-${STACK_VERSION} \
        -f /environment-pinned.yaml \
     && echo "conda activate data-science-stack-${STACK_VERSION}" >> ${HOME}/.bashrc \
     && bash -c 'source ${CONDA_ROOT}/bin/activate data-science-stack-${STACK_VERSION} ; \
-      pip install jupyterlab-nvdashboard ; \
       jupyter labextension install -y --clean \
         @jupyter-widgets/jupyterlab-manager \
         jupyter-threejs \

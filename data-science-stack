@@ -3,7 +3,7 @@
 # Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 
 # Global Paramaters
-STACK_VERSION=2.5.1
+STACK_VERSION=2.6.0
 NOTEBOOKS_VERSION=0.16
 
 MIN_DRIVER=455.23.04
@@ -17,7 +17,8 @@ DEFAULT_ENVIRONMENT="data-science-stack"
 LOGFILE=data-science-stack.log
 
 CONDA_ROOT=${HOME}/conda
-NOTEBOOKS_DIR=${HOME}/data-science-stack-${STACK_VERSION}
+DEFAULT_NOTEBOOKS_DIR=${HOME}/data-science-stack-${STACK_VERSION}
+NOTEBOOKS_DIR=${NOTEBOOKS_DIR:-$DEFAULT_NOTEBOOKS_DIR}
 
 if [ -f /etc/redhat-release ]; then
   if grep -q -i "release 7" /etc/redhat-release ; then
@@ -535,7 +536,6 @@ create_conda_env () {
   fi
 
   source ${CONDA_ROOT}/bin/activate ${ENVIRONMENT_NAME}-${STACK_VERSION} ; \
-    pip install jupyterlab-nvdashboard ; \
     jupyter labextension install -y --clean \
       @jupyter-widgets/jupyterlab-manager \
       jupyter-threejs \
