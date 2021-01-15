@@ -34,7 +34,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -y --fix-missing \
 
 ARG STACK_VERSION=2.7.0-dev
 ARG CONDA_VERSION=4.8.3
-ARG RAPIDS_VERSION=0.16
+ARG RAPIDS_VERSION=0.17
 
 ENV CONDA_ROOT=/conda
 ENV NOTEBOOKS_DIR=/notebooks

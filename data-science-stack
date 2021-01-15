@@ -4,7 +4,7 @@
 
 # Global Paramaters
 STACK_VERSION=2.7.0-dev
-NOTEBOOKS_VERSION=0.16
+NOTEBOOKS_VERSION=0.17
 
 MIN_DRIVER=455.23.04
 MIN_CUDA=11.0.228
@@ -571,7 +571,7 @@ install_notebooks () {
   nvlog "Start Install Notebooks"
 
   set -e
-  nvlog "Installing Notebooks to ${NOTEBOOKS_DIR}/"
+  nvlog "Installing Notebooks v${NOTEBOOKS_VERSION} to ${NOTEBOOKS_DIR}/"
   if [ ! -d "${NOTEBOOKS_DIR}" ]; then
     mkdir -p ${NOTEBOOKS_DIR}
   else
