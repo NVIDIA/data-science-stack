@@ -29,14 +29,14 @@ if [ -f /etc/redhat-release ]; then
     OS_RELEASE=8
   else
     echo "Only Red Hat 7.x and 8.x flavors supported."
-    exit
+    exit 1
   fi
 else
   OS_FLAVOR="ubuntu"
   OS_RELEASE=$(lsb_release -r | awk '{print $2}')
   if [ $OS_RELEASE != "18.04" ] && [ $OS_RELEASE != "20.04" ]; then
     echo "Only Ubuntu 18.04 and 20.04 supported."
-    exit
+    exit 1
   fi
 fi
 
@@ -170,7 +170,7 @@ install_driver () {
   Then rerun the command you just ran to proceed.
 
 EOF
-      exit
+      exit 1
     fi
   fi
 
@@ -192,7 +192,7 @@ EOF
   else
     nvlog "Automated NVIDIA driver install on Red Hat is not supported."
     nvlog "Please install NVIDIA driver $MIN_DRIVER or newer and run again."
-    exit
+    exit 1
   fi
   set +e
 
@@ -206,7 +206,7 @@ purge_driver () {
   if [ $OS_FLAVOR != "ubuntu" ]; then
     nvlog "ERROR: Automated NVIDIA driver purge for Red Hat not supported."
     nvlog "Please run /usr/bin/nvidia-uninstall and reboot to remove driver."
-    exit
+    exit 1
   fi
 
   cat << EOF
@@ -492,14 +492,14 @@ install_miniconda () {
     nvlog "ERROR: Conda is installed but older, please update conda environment"
     nvlog "Try 'conda update -n base -c defaults conda'"
     nvlog
-    exit
+    exit 1
   fi
 
   if [ -d "${CONDA_ROOT}" ]; then
     nvlog
     nvlog "ERROR: Failed to detect Conda version but found a ${CONDA_ROOT} directory, please move/backup before install"
     nvlog
-    exit
+    exit 1
   fi
 
   set -e
@@ -746,8 +746,8 @@ install_kubernetes() {
 
   if [ $OS_FLAVOR != "ubuntu" ]; then
     nvlog "ERROR: Automated Kubernetes install for Red Hat not supported."
-    exit
-  fi
+    exit 1
+  fi 
 
   set -e
   sudo apt-get update && sudo apt-get install -y apt-transport-https curl
@@ -801,7 +801,7 @@ purge_kubernetes() {
 
   if [ $OS_FLAVOR != "ubuntu" ]; then
     nvlog "ERROR: Automated Kubernetes purge for Red Hat not supported."
-    exit
+    exit 1
   fi
 
  cat << EOF
@@ -1076,7 +1076,7 @@ case "$1" in
     ENVFILE=${RUNFROM}/environments/${ENVIRONMENT_NAME}.env
     if [ ! -f ${ENVFILE} ]; then
       nvlog "${ENVFILE} not found. Exiting."
-      exit
+      exit 1
     fi
     ENV_COMMAND=$(cat "${ENVFILE}")
     CMD=$(echo "docker run --rm ${PIN_CONTAINER} \
@@ -1146,12 +1146,12 @@ esac
 
 if [ $REBOOT -ne 0 ]; then
   notify_reboot
-  exit
+  exit 0
 fi
 
 if [ $LOGOUT -ne 0 ]; then
   notify_logout
-  exit
+  exit 0
 fi
 
 )2>&1 | tee -a $LOGFILE
