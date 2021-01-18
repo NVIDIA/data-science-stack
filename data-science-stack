@@ -50,6 +50,16 @@ nvlog () {
   echo "###NV### `date` #### $1"
 }
 
+install_autocomplete() {
+  if [ ! -f ~/.bash_completion ]
+  then
+    echo "#/usr/bin/env bash" > ~/.bash_completion
+  fi
+
+  # just add our autocompletions
+  cat dss.comp >> ~/.bash_completion
+
+}
 
 require_user () {
   if [ $(id -u) = 0 ]; then
@@ -132,6 +142,8 @@ install_base () {
   fi
   set +e
 
+  install_autocomplete
+  
   nvlog "END Installing base packages"
 }
 
