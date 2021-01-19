@@ -20,6 +20,14 @@ CONDA_ROOT=${HOME}/conda
 DEFAULT_NOTEBOOKS_DIR=${HOME}/data-science-stack-${STACK_VERSION}
 NOTEBOOKS_DIR=${NOTEBOOKS_DIR:-$DEFAULT_NOTEBOOKS_DIR}
 
+WSL=false
+_tmp=`uname -a | grep microsoft`
+if [ ! -z "$_tmp" ]
+then
+  WSL=true
+  echo "WARNING: WSL detected. Support for WSL is alpha only."
+fi
+
 if [ -f /etc/redhat-release ]; then
   if grep -q -i "release 7" /etc/redhat-release ; then
     OS_FLAVOR="redhat7"
@@ -54,11 +62,16 @@ install_autocomplete() {
   if [ ! -f ~/.bash_completion ]
   then
     echo "#/usr/bin/env bash" > ~/.bash_completion
+    cat dss.comp >> ~/.bash_completion
+  else 
+    # does the existing file contain the autocompletion already?
+    _tmp=`grep "complete -F _dss ./data-science-stack" ~/.bash_completion`
+    if [ -z "$_tmp" ]
+    then
+      # add our autocompletions
+      cat dss.comp >> ~/.bash_completion
+    fi
   fi
-
-  # just add our autocompletions
-  cat dss.comp >> ~/.bash_completion
-
 }
 
 require_user () {
@@ -166,6 +179,13 @@ detect_driver () {
 install_driver () {
   nvlog "START Installing Driver"
 
+  if [ "$WSL" = true ]
+  then
+    nvlog "Driver installation is not needed in WSL - skip install"
+    nvlog "END Installing Driver"
+    return  
+  fi
+
   if [ $OS_FLAVOR = "ubuntu" ]; then
     if [ -f /usr/bin/nvidia-uninstall ]; then
       cat << EOF
@@ -214,6 +234,13 @@ EOF
 
 purge_driver () {
   nvlog "START Purge Driver"
+
+  if [ "$WSL" = true ]
+  then
+    nvlog "Driver Purge is not needed in WSL - skip Purge"
+    nvlog "END Purge Driver"
+    return  
+  fi  
 
   if [ $OS_FLAVOR != "ubuntu" ]; then
     nvlog "ERROR: Automated NVIDIA driver purge for Red Hat not supported."
@@ -268,6 +295,7 @@ detect_cuda () {
 
 install_cuda () {
   nvlog "START Installing CUDA"
+  
   semver_gte $CUDA_VER $MIN_CUDA
   if [ $? -eq 1 ]; then
     nvlog "CUDA is new enough - skip install"
@@ -372,9 +400,25 @@ install_docker () {
       docker-ce-cli \
       containerd.io
     sudo systemctl enable docker
-    sudo systemctl start docker
-    sudo groupadd -f docker
-    sudo systemctl restart docker
+    sudo apt install -y acl
+    if [ "$WSL" = true ] 
+    then
+      sudo /etc/init.d/docker start
+      sudo groupadd -f docker
+      sudo /etc/init.d/docker restart
+      # wait for /var/run/docker.sock to be created
+      while [ ! -S /var/run/docker.sock ]
+      do
+        nvlog "/var/run/docker.sock does not exist, waiting"
+        sleep 1
+      done
+      nvlog "/var/run/docker.sock verified"
+    else
+      sudo systemctl start docker
+      sudo groupadd -f docker
+      sudo systemctl restart docker
+    fi
+
   elif [ $OS_FLAVOR = "redhat7" ]; then
     # NVIDIA Repos
     distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
@@ -389,9 +433,24 @@ install_docker () {
       docker-ce-cli \
       containerd.io
     sudo systemctl enable docker
-    sudo systemctl start docker
-    sudo groupadd -f docker
-    sudo systemctl restart docker
+    if [ "$WSL" = true ] 
+    then
+      sudo /etc/init.d/docker start
+      sudo groupadd -f docker
+      sudo /etc/init.d/docker restart
+      # wait for /var/run/docker.sock to be created
+      while [ ! -S /var/run/docker.sock ]
+      do
+        nvlog "/var/run/docker.sock does not exist, waiting"
+        sleep 1
+      done
+      nvlog "/var/run/docker.sock verified"
+    else
+      sudo systemctl start docker
+      sudo groupadd -f docker
+      sudo systemctl restart docker
+    fi
+
   else # RHEL 8
     # NVIDIA Repos
     distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
@@ -410,9 +469,24 @@ install_docker () {
       docker-ce \
       nvidia-container-toolkit
     sudo systemctl enable docker
-    sudo systemctl start docker
-    sudo groupadd -f docker
-    sudo systemctl restart docker
+    if [ "$WSL" = true ] 
+    then
+      sudo /etc/init.d/docker start
+      sudo groupadd -f docker
+      sudo /etc/init.d/docker restart
+      # wait for /var/run/docker.sock to be created
+      while [ ! -S /var/run/docker.sock ]
+      do
+        nvlog "/var/run/docker.sock does not exist, waiting"
+        sleep 1
+      done
+      nvlog "/var/run/docker.sock verified"
+    else
+      sudo systemctl start docker
+      sudo groupadd -f docker
+      sudo systemctl restart docker
+    fi
+
   fi
   set +e
 
@@ -430,10 +504,15 @@ docker_adduser () {
 
   set -e
   nvlog "Adding user '$USER' to docker group"
-  sudo usermod -aG docker $USER
+  sudo usermod -a -G docker $USER
   sudo setfacl -m user:$USER:rw /var/run/docker.sock
-  sudo systemctl daemon-reload
-  sudo systemctl reload docker
+  if [ "$WSL" = true ] 
+  then
+    sudo /etc/init.d/docker restart
+  else
+    sudo systemctl daemon-reload
+    sudo systemctl reload docker
+  fi
   LOGOUT=1
   set +e
 
@@ -634,6 +713,7 @@ diagnostics () {
   nvlog "START Diagnostics"
 
   nvlog "Run as: $USER"
+  nvlog "WSL: $WSL"
   nvlog "OS Flavor: $OS_FLAVOR"
   nvlog "OS Release: $OS_RELEASE"
   if [ -f /usr/bin/lsb_release ]; then
@@ -652,11 +732,15 @@ diagnostics () {
   ping -c 1 -W 3 8.8.8.8
 
   nvlog "Driver detected (0 means not installed): $DRIVER_VER"
-  nvlog "NVIDIA SMI:"
-  if [ -f /usr/bin/nvidia-smi ]; then
+
+  if [ "$WSL" = false ]
+  then
+   nvlog "NVIDIA SMI:"
+   if [ -f /usr/bin/nvidia-smi ]; then
     /usr/bin/nvidia-smi
-  else
+   else
     echo "nvidia-smi not found, NVIDIA GPU Driver not installed correctly."
+   fi
   fi
 
   nvlog "CUDA detected (0 means not installed): $CUDA_VER"
@@ -1026,9 +1110,12 @@ case "$1" in
 
   run-jupyter)
     ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
-    SYSTEM_GPUS="$(/usr/bin/nvidia-smi -L | wc -l)"
-    export MAXGPUS=${MAXGPUS:-$SYSTEM_GPUS}
-    nvlog "Max GPUs = $MAXGPUS"
+    if [ "$WSL" = false ]
+    then
+      SYSTEM_GPUS="$(/usr/bin/nvidia-smi -L | wc -l)"
+      export MAXGPUS=${MAXGPUS:-$SYSTEM_GPUS}
+      nvlog "Max GPUs = $MAXGPUS"
+    fi
     source ${CONDA_ROOT}/bin/activate ${ENVIRONMENT_NAME}-${STACK_VERSION}
     nvlog "Command: jupyter-lab --no-browser --ip=0.0.0.0 --notebook-dir=${NOTEBOOKS_DIR}"
     jupyter-lab --no-browser --ip=0.0.0.0 --notebook-dir=${NOTEBOOKS_DIR}
