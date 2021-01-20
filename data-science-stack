@@ -401,6 +401,11 @@ install_docker () {
       containerd.io
     sudo systemctl enable docker
     sudo apt install -y acl
+
+    nvlog "setting nvidia runtime as the default docker runtime"
+    sudo mv /etc/docker/daemon.json /etc/docker/daemon.json.bak
+    sudo cp docker/daemon.json /etc/docker/daemon.json
+
     if [ "$WSL" = true ] 
     then
       sudo /etc/init.d/docker start
@@ -488,6 +493,7 @@ install_docker () {
     fi
 
   fi
+
   set +e
 
   nvlog "END Installing Docker and NVIDIA Container Toolkit"
@@ -891,6 +897,31 @@ install_kubernetes() {
   nvlog "END Kubernetes install with kubeadm"
 }
 
+install_jupyter-repo2docker() {
+  nvlog "START jupyter-repo2docker install"
+  
+  if [ $OS_FLAVOR = "ubuntu" ]; then
+    sudo apt install -y python3-pip
+    pip3 install jupyter-repo2docker
+  else #RHEL
+    sudo yum install -y python3-pip
+    pip3 install jupyter-repo2docker
+  fi 
+  nvlog "END jupyter-repo2docker install"
+}
+
+purge_jupyter-repo2docker() {
+  nvlog "START jupyter-repo2docker purge"
+  
+  # let us not remove python-pip as it may be used for other things in the future
+  if [ $OS_FLAVOR = "ubuntu" ]; then
+    pip3 uninstall -y jupyter-repo2docker
+  else #RHEL
+    pip3 uninstall -y jupyter-repo2docker
+  fi 
+  nvlog "END jupyter-repo2docker purge"
+}
+
 
 purge_kubernetes() {
   nvlog "START Kubernetes purge with kubeadm"
@@ -1034,6 +1065,11 @@ Other Subcommands:
         Install a local Kubernetes stack with kubeadm
     purge-kubernetes
         DANGER: Purge the local Kubernetes stack installed with this
+        script's install-kubernetes command.
+    install-tools
+        Install the local tools (currently, only jupyter-repo2docker, but this list may grow over time)
+    purge-tools
+        DANGER: Purge local tools (currently, only jupyter-repo2docker)
         script's install-kubernetes command.
 
 EOF
@@ -1232,6 +1268,16 @@ case "$1" in
   purge-kubernetes)
     require_user
     purge_kubernetes
+    ;;
+
+  install-tools)
+    require_user
+    install_jupyter-repo2docker
+    nvlog "please logout and login again"
+    ;;
+  purge-tools)
+    require_user
+    purge_jupyter-repo2docker
     ;;
 
   help)

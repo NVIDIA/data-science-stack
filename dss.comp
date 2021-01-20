@@ -2,7 +2,7 @@ _dss()
 {
   case $COMP_CWORD in
   1)
-    COMPREPLY=($(compgen -W "help version list diagnostics setup-system build-container run-container build-conda-env run-jupyter pin pin-clean run-notebook run-notebook-dir install-base install-driver purge-driver install-docker setup-user install-cuda install-miniconda purge-container create-conda-env purge-conda-env purge-conda install-notebooks install-kubernetes purge-kubernetes" "${COMP_WORDS[1]}"))
+    COMPREPLY=($(compgen -W "help version list diagnostics setup-system build-container run-container build-conda-env run-jupyter pin pin-clean run-notebook run-notebook-dir install-base install-driver purge-driver install-docker setup-user install-cuda install-miniconda purge-container create-conda-env purge-conda-env purge-conda install-notebooks install-kubernetes purge-kubernetes install-tools purge-tools" "${COMP_WORDS[1]}"))
     ;;
 #  2)
 #    COMPREPLY=($(compgen -W "noww tomorrow never" "${COMP_WORDS[2]}"))
