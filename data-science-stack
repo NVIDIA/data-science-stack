@@ -780,6 +780,55 @@ notify_reboot () {
   nvlog
 }
 
+get_latest_dss_version() {
+  TEMPFILE=$(mktemp)
+  curl --silent -o $TEMPFILE "https://api.github.com/repos/NVIDIA/data-science-stack/releases/latest"
+  local GH_LATEST=$(cat $TEMPFILE | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+  rm -f $TEMPFILE
+  echo "$GH_LATEST"
+}
+
+upgrade() {
+  lv=$(get_latest_dss_version)
+  if [[ "$lv" == v* ]]; then
+    lv=`echo $lv | cut -d 'v' -f2`
+    cv=${STACK_VERSION}
+    nvlog "local version: ${cv}, latest vesion: ${lv}"
+    semver_gte $cv $lv
+    if [ $? -eq 1 ]; then
+      nvlog "already at the latest version"
+      return
+    fi
+    nvlog "UPGRADE upgrading to version ${lv}"
+    do_upgrade
+  else
+    nvlog "could not determine the latest data science stack version"
+    exit 1
+  fi
+}
+
+do_upgrade() {
+  nvlog "UPGRADE starting"
+  ENVIRONMENT_NAME=${DEFAULT_ENVIRONMENT}
+  # remove the default docker container image if it exists
+  if [ $DOCKER_VER != 0 ]; then
+    purge_container
+  fi
+  # remove the default conda env if it exists
+  if [ $CONDA_VER != 0 ]; then
+    purge_conda_env
+  fi
+  # We don't completely wipe the system here, we just install the new script[s]
+  # While this may lack rigor, it also should save time
+  mv ${HOME}/data-science-stack /tmp/data-science-stack
+  cd ${HOME}
+  git clone https://github.com/NVIDIA/data-science-stack.git
+  cd ${HOME}/data-science-stack
+  sh ./data-science-stack setup-system
+  rm -fr /tmp/data-science-stack
+  cd ${HOME}
+  nvlog "UPGRADE done, please log out and log in"
+}
 
 notify_logout () {
   nvlog
@@ -988,6 +1037,8 @@ Setup Commands:
 
     setup-system
         Setup system to enable NVIDIA Data Science software.
+    upgrade
+        Upgrades to the latest version, if the latest version is available
 
 Containers Commands:
 
@@ -1084,16 +1135,14 @@ detect_conda
 case "$1" in
   version)
     echo Version: ${STACK_VERSION}
-    TEMPFILE=$(mktemp)
-    curl --silent -o $TEMPFILE "https://api.github.com/repos/NVIDIA/data-science-stack/releases/latest"
-    GH_LATEST=$(cat $TEMPFILE | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    GH_LATEST=$(get_latest_dss_version)
     if [[ $GH_LATEST == v* ]]; then
       echo Latest: $GH_LATEST
     else
       echo Latest: unknown
       echo Error: `cat $TEMPFILE`
     fi
-    rm -f $TEMPFILE
+
     ;;
 
   list)
@@ -1115,6 +1164,10 @@ case "$1" in
     install_driver
     install_docker
     docker_adduser
+    ;;
+
+  upgrade)
+    upgrade
     ;;
 
   build-container)
