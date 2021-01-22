@@ -803,7 +803,7 @@ upgrade() {
     do_upgrade
   else
     nvlog "could not determine the latest data science stack version"
-    exit 1
+    return
   fi
 }
 
@@ -820,12 +820,14 @@ do_upgrade() {
   fi
   # We don't completely wipe the system here, we just install the new script[s]
   # While this may lack rigor, it also should save time
-  mv ${HOME}/data-science-stack /tmp/data-science-stack
+
+  # back up the current (old) version of the stack
+  mv ${HOME}/data-science-stack ${HOME}/data-science-stack-backup-${STACK_VERSION}
   cd ${HOME}
+  # install the new version
   git clone https://github.com/NVIDIA/data-science-stack.git
   cd ${HOME}/data-science-stack
   sh ./data-science-stack setup-system
-  rm -fr /tmp/data-science-stack
   cd ${HOME}
   nvlog "UPGRADE done, please log out and log in"
 }
@@ -834,7 +836,7 @@ notify_logout () {
   nvlog
   nvlog
   nvlog "ACTION REQUIRED:"
-  nvlog "For the changes to take effect, please logout and login again."
+  nvlog "For the changes to take effect, please logout and login back in."
   nvlog
   nvlog "Current working directory: `pwd`/"
   nvlog "data-science-stack script: ${RUNFROM}/${SCRIPT_NAME}"
