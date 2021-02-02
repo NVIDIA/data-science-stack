@@ -827,7 +827,7 @@ do_upgrade() {
   # install the new version
   git clone https://github.com/NVIDIA/data-science-stack.git
   cd ${HOME}/data-science-stack
-  sh ./data-science-stack setup-system
+  bash ./data-science-stack setup-system
   cd ${HOME}
   nvlog "UPGRADE done, please log out and log in"
 }
