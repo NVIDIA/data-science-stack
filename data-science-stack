@@ -3,7 +3,7 @@
 # Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 
 # Global Paramaters
-STACK_VERSION=2.7.0-dev
+STACK_VERSION=2.7.0
 NOTEBOOKS_VERSION=0.17
 
 MIN_DRIVER=455.23.04
