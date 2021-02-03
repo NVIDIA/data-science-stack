@@ -3,8 +3,8 @@
 # Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 
 # Global Paramaters
-STACK_VERSION=2.6.0
-NOTEBOOKS_VERSION=0.16
+STACK_VERSION=2.7.0
+NOTEBOOKS_VERSION=0.17
 
 MIN_DRIVER=455.23.04
 MIN_CUDA=11.0.228
@@ -20,6 +20,14 @@ CONDA_ROOT=${HOME}/conda
 DEFAULT_NOTEBOOKS_DIR=${HOME}/data-science-stack-${STACK_VERSION}
 NOTEBOOKS_DIR=${NOTEBOOKS_DIR:-$DEFAULT_NOTEBOOKS_DIR}
 
+WSL=false
+_tmp=`uname -a | grep microsoft`
+if [ ! -z "$_tmp" ]
+then
+  WSL=true
+  echo "WARNING: WSL detected. Support for WSL is alpha only."
+fi
+
 if [ -f /etc/redhat-release ]; then
   if grep -q -i "release 7" /etc/redhat-release ; then
     OS_FLAVOR="redhat7"
@@ -29,14 +37,14 @@ if [ -f /etc/redhat-release ]; then
     OS_RELEASE=8
   else
     echo "Only Red Hat 7.x and 8.x flavors supported."
-    exit
+    exit 1
   fi
 else
   OS_FLAVOR="ubuntu"
   OS_RELEASE=$(lsb_release -r | awk '{print $2}')
   if [ $OS_RELEASE != "18.04" ] && [ $OS_RELEASE != "20.04" ]; then
     echo "Only Ubuntu 18.04 and 20.04 supported."
-    exit
+    exit 1
   fi
 fi
 
@@ -50,6 +58,21 @@ nvlog () {
   echo "###NV### `date` #### $1"
 }
 
+install_autocomplete() {
+  if [ ! -f ~/.bash_completion ]
+  then
+    echo "#/usr/bin/env bash" > ~/.bash_completion
+    cat dss.comp >> ~/.bash_completion
+  else 
+    # does the existing file contain the autocompletion already?
+    _tmp=`grep "complete -F _dss ./data-science-stack" ~/.bash_completion`
+    if [ -z "$_tmp" ]
+    then
+      # add our autocompletions
+      cat dss.comp >> ~/.bash_completion
+    fi
+  fi
+}
 
 require_user () {
   if [ $(id -u) = 0 ]; then
@@ -132,6 +155,8 @@ install_base () {
   fi
   set +e
 
+  install_autocomplete
+  
   nvlog "END Installing base packages"
 }
 
@@ -154,6 +179,13 @@ detect_driver () {
 install_driver () {
   nvlog "START Installing Driver"
 
+  if [ "$WSL" = true ]
+  then
+    nvlog "Driver installation is not needed in WSL - skip install"
+    nvlog "END Installing Driver"
+    return  
+  fi
+
   if [ $OS_FLAVOR = "ubuntu" ]; then
     if [ -f /usr/bin/nvidia-uninstall ]; then
       cat << EOF
@@ -170,7 +202,7 @@ install_driver () {
   Then rerun the command you just ran to proceed.
 
 EOF
-      exit
+      exit 1
     fi
   fi
 
@@ -192,7 +224,7 @@ EOF
   else
     nvlog "Automated NVIDIA driver install on Red Hat is not supported."
     nvlog "Please install NVIDIA driver $MIN_DRIVER or newer and run again."
-    exit
+    exit 1
   fi
   set +e
 
@@ -203,10 +235,17 @@ EOF
 purge_driver () {
   nvlog "START Purge Driver"
 
+  if [ "$WSL" = true ]
+  then
+    nvlog "Driver Purge is not needed in WSL - skip Purge"
+    nvlog "END Purge Driver"
+    return  
+  fi  
+
   if [ $OS_FLAVOR != "ubuntu" ]; then
     nvlog "ERROR: Automated NVIDIA driver purge for Red Hat not supported."
     nvlog "Please run /usr/bin/nvidia-uninstall and reboot to remove driver."
-    exit
+    exit 1
   fi
 
   cat << EOF
@@ -256,6 +295,7 @@ detect_cuda () {
 
 install_cuda () {
   nvlog "START Installing CUDA"
+  
   semver_gte $CUDA_VER $MIN_CUDA
   if [ $? -eq 1 ]; then
     nvlog "CUDA is new enough - skip install"
@@ -360,9 +400,30 @@ install_docker () {
       docker-ce-cli \
       containerd.io
     sudo systemctl enable docker
-    sudo systemctl start docker
-    sudo groupadd -f docker
-    sudo systemctl restart docker
+    sudo apt install -y acl
+
+    nvlog "setting nvidia runtime as the default docker runtime"
+    sudo mv /etc/docker/daemon.json /etc/docker/daemon.json.bak
+    sudo cp docker/daemon.json /etc/docker/daemon.json
+
+    if [ "$WSL" = true ] 
+    then
+      sudo /etc/init.d/docker start
+      sudo groupadd -f docker
+      sudo /etc/init.d/docker restart
+      # wait for /var/run/docker.sock to be created
+      while [ ! -S /var/run/docker.sock ]
+      do
+        nvlog "/var/run/docker.sock does not exist, waiting"
+        sleep 1
+      done
+      nvlog "/var/run/docker.sock verified"
+    else
+      sudo systemctl start docker
+      sudo groupadd -f docker
+      sudo systemctl restart docker
+    fi
+
   elif [ $OS_FLAVOR = "redhat7" ]; then
     # NVIDIA Repos
     distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
@@ -377,9 +438,24 @@ install_docker () {
       docker-ce-cli \
       containerd.io
     sudo systemctl enable docker
-    sudo systemctl start docker
-    sudo groupadd -f docker
-    sudo systemctl restart docker
+    if [ "$WSL" = true ] 
+    then
+      sudo /etc/init.d/docker start
+      sudo groupadd -f docker
+      sudo /etc/init.d/docker restart
+      # wait for /var/run/docker.sock to be created
+      while [ ! -S /var/run/docker.sock ]
+      do
+        nvlog "/var/run/docker.sock does not exist, waiting"
+        sleep 1
+      done
+      nvlog "/var/run/docker.sock verified"
+    else
+      sudo systemctl start docker
+      sudo groupadd -f docker
+      sudo systemctl restart docker
+    fi
+
   else # RHEL 8
     # NVIDIA Repos
     distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
@@ -398,10 +474,26 @@ install_docker () {
       docker-ce \
       nvidia-container-toolkit
     sudo systemctl enable docker
-    sudo systemctl start docker
-    sudo groupadd -f docker
-    sudo systemctl restart docker
+    if [ "$WSL" = true ] 
+    then
+      sudo /etc/init.d/docker start
+      sudo groupadd -f docker
+      sudo /etc/init.d/docker restart
+      # wait for /var/run/docker.sock to be created
+      while [ ! -S /var/run/docker.sock ]
+      do
+        nvlog "/var/run/docker.sock does not exist, waiting"
+        sleep 1
+      done
+      nvlog "/var/run/docker.sock verified"
+    else
+      sudo systemctl start docker
+      sudo groupadd -f docker
+      sudo systemctl restart docker
+    fi
+
   fi
+
   set +e
 
   nvlog "END Installing Docker and NVIDIA Container Toolkit"
@@ -418,10 +510,15 @@ docker_adduser () {
 
   set -e
   nvlog "Adding user '$USER' to docker group"
-  sudo usermod -aG docker $USER
+  sudo usermod -a -G docker $USER
   sudo setfacl -m user:$USER:rw /var/run/docker.sock
-  sudo systemctl daemon-reload
-  sudo systemctl reload docker
+  if [ "$WSL" = true ] 
+  then
+    sudo /etc/init.d/docker restart
+  else
+    sudo systemctl daemon-reload
+    sudo systemctl reload docker
+  fi
   LOGOUT=1
   set +e
 
@@ -492,14 +589,14 @@ install_miniconda () {
     nvlog "ERROR: Conda is installed but older, please update conda environment"
     nvlog "Try 'conda update -n base -c defaults conda'"
     nvlog
-    exit
+    exit 1
   fi
 
   if [ -d "${CONDA_ROOT}" ]; then
     nvlog
     nvlog "ERROR: Failed to detect Conda version but found a ${CONDA_ROOT} directory, please move/backup before install"
     nvlog
-    exit
+    exit 1
   fi
 
   set -e
@@ -571,7 +668,7 @@ install_notebooks () {
   nvlog "Start Install Notebooks"
 
   set -e
-  nvlog "Installing Notebooks to ${NOTEBOOKS_DIR}/"
+  nvlog "Installing Notebooks v${NOTEBOOKS_VERSION} to ${NOTEBOOKS_DIR}/"
   if [ ! -d "${NOTEBOOKS_DIR}" ]; then
     mkdir -p ${NOTEBOOKS_DIR}
   else
@@ -622,6 +719,7 @@ diagnostics () {
   nvlog "START Diagnostics"
 
   nvlog "Run as: $USER"
+  nvlog "WSL: $WSL"
   nvlog "OS Flavor: $OS_FLAVOR"
   nvlog "OS Release: $OS_RELEASE"
   if [ -f /usr/bin/lsb_release ]; then
@@ -640,11 +738,15 @@ diagnostics () {
   ping -c 1 -W 3 8.8.8.8
 
   nvlog "Driver detected (0 means not installed): $DRIVER_VER"
-  nvlog "NVIDIA SMI:"
-  if [ -f /usr/bin/nvidia-smi ]; then
+
+  if [ "$WSL" = false ]
+  then
+   nvlog "NVIDIA SMI:"
+   if [ -f /usr/bin/nvidia-smi ]; then
     /usr/bin/nvidia-smi
-  else
+   else
     echo "nvidia-smi not found, NVIDIA GPU Driver not installed correctly."
+   fi
   fi
 
   nvlog "CUDA detected (0 means not installed): $CUDA_VER"
@@ -678,12 +780,63 @@ notify_reboot () {
   nvlog
 }
 
+get_latest_dss_version() {
+  TEMPFILE=$(mktemp)
+  curl --silent -o $TEMPFILE "https://api.github.com/repos/NVIDIA/data-science-stack/releases/latest"
+  local GH_LATEST=$(cat $TEMPFILE | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+  rm -f $TEMPFILE
+  echo "$GH_LATEST"
+}
+
+upgrade() {
+  lv=$(get_latest_dss_version)
+  if [[ "$lv" == v* ]]; then
+    lv=`echo $lv | cut -d 'v' -f2`
+    cv=${STACK_VERSION}
+    nvlog "local version: ${cv}, latest vesion: ${lv}"
+    semver_gte $cv $lv
+    if [ $? -eq 1 ]; then
+      nvlog "already at the latest version"
+      return
+    fi
+    nvlog "UPGRADE upgrading to version ${lv}"
+    do_upgrade
+  else
+    nvlog "could not determine the latest data science stack version"
+    return
+  fi
+}
+
+do_upgrade() {
+  nvlog "UPGRADE starting"
+  ENVIRONMENT_NAME=${DEFAULT_ENVIRONMENT}
+  # remove the default docker container image if it exists
+  if [ $DOCKER_VER != 0 ]; then
+    purge_container
+  fi
+  # remove the default conda env if it exists
+  if [ $CONDA_VER != 0 ]; then
+    purge_conda_env
+  fi
+  # We don't completely wipe the system here, we just install the new script[s]
+  # While this may lack rigor, it also should save time
+
+  # back up the current (old) version of the stack
+  mv ${HOME}/data-science-stack ${HOME}/data-science-stack-backup-${STACK_VERSION}
+  cd ${HOME}
+  # install the new version
+  git clone https://github.com/NVIDIA/data-science-stack.git
+  cd ${HOME}/data-science-stack
+  bash ./data-science-stack setup-system
+  cd ${HOME}
+  nvlog "UPGRADE done, please log out and log in"
+}
 
 notify_logout () {
   nvlog
   nvlog
   nvlog "ACTION REQUIRED:"
-  nvlog "For the changes to take effect, please logout and login again."
+  nvlog "For the changes to take effect, please logout and login back in."
   nvlog
   nvlog "Current working directory: `pwd`/"
   nvlog "data-science-stack script: ${RUNFROM}/${SCRIPT_NAME}"
@@ -746,8 +899,8 @@ install_kubernetes() {
 
   if [ $OS_FLAVOR != "ubuntu" ]; then
     nvlog "ERROR: Automated Kubernetes install for Red Hat not supported."
-    exit
-  fi
+    exit 1
+  fi 
 
   set -e
   sudo apt-get update && sudo apt-get install -y apt-transport-https curl
@@ -795,13 +948,38 @@ install_kubernetes() {
   nvlog "END Kubernetes install with kubeadm"
 }
 
+install_jupyter-repo2docker() {
+  nvlog "START jupyter-repo2docker install"
+  
+  if [ $OS_FLAVOR = "ubuntu" ]; then
+    sudo apt install -y python3-pip
+    pip3 install jupyter-repo2docker
+  else #RHEL
+    sudo yum install -y python3-pip
+    pip3 install jupyter-repo2docker
+  fi 
+  nvlog "END jupyter-repo2docker install"
+}
+
+purge_jupyter-repo2docker() {
+  nvlog "START jupyter-repo2docker purge"
+  
+  # let us not remove python-pip as it may be used for other things in the future
+  if [ $OS_FLAVOR = "ubuntu" ]; then
+    pip3 uninstall -y jupyter-repo2docker
+  else #RHEL
+    pip3 uninstall -y jupyter-repo2docker
+  fi 
+  nvlog "END jupyter-repo2docker purge"
+}
+
 
 purge_kubernetes() {
   nvlog "START Kubernetes purge with kubeadm"
 
   if [ $OS_FLAVOR != "ubuntu" ]; then
     nvlog "ERROR: Automated Kubernetes purge for Red Hat not supported."
-    exit
+    exit 1
   fi
 
  cat << EOF
@@ -861,6 +1039,8 @@ Setup Commands:
 
     setup-system
         Setup system to enable NVIDIA Data Science software.
+    upgrade
+        Upgrades to the latest version, if the latest version is available
 
 Containers Commands:
 
@@ -939,6 +1119,11 @@ Other Subcommands:
     purge-kubernetes
         DANGER: Purge the local Kubernetes stack installed with this
         script's install-kubernetes command.
+    install-tools
+        Install the local tools (currently, only jupyter-repo2docker, but this list may grow over time)
+    purge-tools
+        DANGER: Purge local tools (currently, only jupyter-repo2docker)
+        script's install-kubernetes command.
 
 EOF
 }
@@ -952,16 +1137,14 @@ detect_conda
 case "$1" in
   version)
     echo Version: ${STACK_VERSION}
-    TEMPFILE=$(mktemp)
-    curl --silent -o $TEMPFILE "https://api.github.com/repos/NVIDIA/data-science-stack/releases/latest"
-    GH_LATEST=$(cat $TEMPFILE | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    GH_LATEST=$(get_latest_dss_version)
     if [[ $GH_LATEST == v* ]]; then
       echo Latest: $GH_LATEST
     else
       echo Latest: unknown
       echo Error: `cat $TEMPFILE`
     fi
-    rm -f $TEMPFILE
+
     ;;
 
   list)
@@ -983,6 +1166,10 @@ case "$1" in
     install_driver
     install_docker
     docker_adduser
+    ;;
+
+  upgrade)
+    upgrade
     ;;
 
   build-container)
@@ -1014,9 +1201,12 @@ case "$1" in
 
   run-jupyter)
     ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
-    SYSTEM_GPUS="$(/usr/bin/nvidia-smi -L | wc -l)"
-    export MAXGPUS=${MAXGPUS:-$SYSTEM_GPUS}
-    nvlog "Max GPUs = $MAXGPUS"
+    if [ "$WSL" = false ]
+    then
+      SYSTEM_GPUS="$(/usr/bin/nvidia-smi -L | wc -l)"
+      export MAXGPUS=${MAXGPUS:-$SYSTEM_GPUS}
+      nvlog "Max GPUs = $MAXGPUS"
+    fi
     source ${CONDA_ROOT}/bin/activate ${ENVIRONMENT_NAME}-${STACK_VERSION}
     nvlog "Command: jupyter-lab --no-browser --ip=0.0.0.0 --notebook-dir=${NOTEBOOKS_DIR}"
     jupyter-lab --no-browser --ip=0.0.0.0 --notebook-dir=${NOTEBOOKS_DIR}
@@ -1076,7 +1266,7 @@ case "$1" in
     ENVFILE=${RUNFROM}/environments/${ENVIRONMENT_NAME}.env
     if [ ! -f ${ENVFILE} ]; then
       nvlog "${ENVFILE} not found. Exiting."
-      exit
+      exit 1
     fi
     ENV_COMMAND=$(cat "${ENVFILE}")
     CMD=$(echo "docker run --rm ${PIN_CONTAINER} \
@@ -1135,6 +1325,16 @@ case "$1" in
     purge_kubernetes
     ;;
 
+  install-tools)
+    require_user
+    install_jupyter-repo2docker
+    nvlog "please logout and login again"
+    ;;
+  purge-tools)
+    require_user
+    purge_jupyter-repo2docker
+    ;;
+
   help)
     usage
     ;;
@@ -1146,12 +1346,12 @@ esac
 
 if [ $REBOOT -ne 0 ]; then
   notify_reboot
-  exit
+  exit 0
 fi
 
 if [ $LOGOUT -ne 0 ]; then
   notify_logout
-  exit
+  exit 0
 fi
 
 )2>&1 | tee -a $LOGFILE

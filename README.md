@@ -40,7 +40,7 @@ cd data-science-stack
 ./data-science-stack setup-system
 ````
 
-On Red Hat Enterprise Linux Workstation 7.x or 8.x:
+On Red Hat Enterprise Linux (RHEL) Workstation 7.x or 8.x:
 
 ```bash
 git clone github.com/NVIDIA/data-science-stack
@@ -49,6 +49,11 @@ cd data-science-stack
 # script will stop, manually install driver ... (instructions below)
 ./data-science-stack setup-system
 ```
+
+On Windows Subsystem for Linux (WSL):
+_Note: This functionality is alpha only until WSL v2 becomes production ready_
+Follow the [install instructions](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) to install WSL v2 with CUDA support.
+Then, create a a Ubuntu or RHEL VM, open a terminal, and follow OS-specific instructions above.
 
 Next, users have a choice to use containers or a local Conda environment:
 
@@ -105,7 +110,13 @@ Docker and setup Conda in the account
 The script is designed to detect old versions of dependencies and upgrade
 them, and create new environments/containers.
 
-To upgrade get the new version of the script and environment configs with
+To upgrade automatically:
+```bash
+./data-science-stack upgrade
+```
+If a newer version of data science stack is available, the script will retrieve it and perform the upgrade.
+
+To upgrade manually, get the new version of the script and environment configs with
 `git pull` or with a new release .zip, and run the install steps again -
 most likely `setup-system` and one of the `build-...` commands.
 
@@ -175,6 +186,12 @@ Register the system with the Red Hat Customer Portal to complete the initial
 setup. See the How to Register and Subscribe a system to the Red Hat
 Customer Portal using Red Hat Subscription-Manager for further information -
 <https://access.redhat.com/solutions/253273>
+
+### Windows Subsystem for Linux (WSL v2)
+_Note: This functionality is alpha only until WSL v2 becomes production ready_
+
+Follow the [install instructions](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for WSL v2 with CUDA support.
+Then, create a a Ubuntu or RHEL VM, open a terminal, and follow OS-specific instructions above.
 
 ## Installing the NVIDIA GPU Driver
 
@@ -302,6 +319,9 @@ Once the NVIDIA driver install has completed, reboot.
 ```bash
 sudo reboot
 ```
+
+### Windows Subsystem for Linux (WSL v2) Driver Install
+There is no need to install the driver inside WSL VMs as they use the driver installed in Windows. Data Science Stack scripts will detect WSL and not install the driver again. 
 
 ## Installing NVIDIA Container SELinux Policy
 
