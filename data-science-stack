@@ -623,6 +623,11 @@ install_miniconda () {
 create_conda_env () {
   nvlog "START Setup Conda Env - env:${ENVIRONMENT_NAME} => ${ENVIRONMENT_NAME}-${STACK_VERSION}"
 
+  if [ ! -f $RUNFROM/environments/${ENVIRONMENT_NAME}-pinned.yaml ]; then
+      nvlog "ERROR: unknown environment '${ENVIRONMENT_NAME}', try $0 list"
+      exit 1
+  fi
+
   ${CONDA_ROOT}/bin/conda env create -n ${ENVIRONMENT_NAME}-${STACK_VERSION} \
     -f $RUNFROM/environments/${ENVIRONMENT_NAME}-pinned.yaml
 
