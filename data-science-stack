@@ -484,7 +484,7 @@ install_docker () {
       sudo systemctl restart docker
     fi
 
-  else # RHEL 8
+  elif [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel8" ]; then
     # NVIDIA Repos
     curl -s -L https://nvidia.github.io/nvidia-docker/$OS_FLAVOR$OS_RELEASE/nvidia-docker.repo | \
       sudo tee /etc/yum.repos.d/nvidia-docker.repo
@@ -519,6 +519,9 @@ install_docker () {
       sudo systemctl restart docker
     fi
 
+  else
+    nvlog "ERROR: install_docker(): unknown system type: $OS_FLAVOR $OS_RELEASE"
+    exit 1
   fi
 
   set +e
