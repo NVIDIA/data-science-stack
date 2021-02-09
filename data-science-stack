@@ -326,10 +326,13 @@ install_cuda () {
       sudo yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
       sudo yum clean all
       sudo yum install -y cuda-toolkit-11-0
-    else
+    elif [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel8" ]; then
       sudo dnf config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
       sudo dnf clean all
       sudo dnf -y install cuda-toolkit-11-0
+    else
+      nvlog "ERROR: install_cuda(): unknown system type: $OS_FLAVOR $OS_RELEASE"
+      exit 1
     fi
   fi
   set +e
