@@ -102,7 +102,7 @@ install_base () {
       tzdata \
       wget \
       zlib1g-dev
-  elif [ $OS_FLAVOR$OS_RELEASE = "redhat7" ]; then
+  elif [ $OS_FLAVOR$OS_RELEASE = "rhel7" ]; then
     sudo subscription-manager repos --enable rhel-7-workstation-devtools-rpms
     sudo subscription-manager repos --enable rhel-7-workstation-optional-rpms
     sudo subscription-manager repos --enable rhel-7-workstation-extras-rpms
@@ -316,7 +316,7 @@ install_cuda () {
       sudo apt-get -y install cuda-toolkit-11-0
     fi
   else
-    if [ $OS_FLAVOR$OS_RELEASE = "redhat7" ]; then
+    if [ $OS_FLAVOR$OS_RELEASE = "rhel7" ]; then
       sudo yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
       sudo yum clean all
       sudo yum install -y cuda-toolkit-11-0
@@ -408,7 +408,7 @@ install_docker () {
       sudo systemctl restart docker
     fi
 
-  elif [ $OS_FLAVOR$OS_RELEASE = "redhat7" ]; then
+  elif [ $OS_FLAVOR$OS_RELEASE = "rhel7" ]; then
     # NVIDIA Repos
     curl -s -L https://nvidia.github.io/nvidia-docker/$OS_FLAVOR$OS_RELEASE/nvidia-docker.repo | \
       sudo tee /etc/yum.repos.d/nvidia-docker.repo
