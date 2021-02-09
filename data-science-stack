@@ -241,6 +241,12 @@ EOF
     sudo dnf install -y kernel-devel-$(uname -r) kernel-headers-$(uname -r)
     sudo dnf -y module install nvidia-driver:460-dkms
     # REBOOT not necessary
+  elif [ $OS_FLAVOR$OS_RELEASE = "fedora32" ]; then
+    sudo dnf -y update
+    sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
+    sudo dnf install https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+    sudo dnf install akmod-nvidia
+    REBOOT=1
   else
     nvlog "Automated NVIDIA driver install on $OS_FLAVOR $OS_RELEASE is not supported."
     nvlog "Please install NVIDIA driver $MIN_DRIVER or newer and run again."
