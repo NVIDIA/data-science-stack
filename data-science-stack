@@ -313,10 +313,6 @@ install_cuda () {
       sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
       sudo apt-get update
       sudo apt-get -y install cuda-toolkit-11-0
-
-      echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-      echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-      source ${HOME}/.bashrc
     else
       curl https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin \
         -o cuda.pin
@@ -325,10 +321,6 @@ install_cuda () {
       sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
       sudo apt-get update
       sudo apt-get -y install cuda-toolkit-11-0
-
-      echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-      echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-      source ${HOME}/.bashrc
     fi
   else
     if [ $OS_FLAVOR = "redhat7" ]; then
@@ -340,12 +332,12 @@ install_cuda () {
       sudo dnf clean all
       sudo dnf -y install cuda-toolkit-11-0
     fi
-
-    echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-    echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-    source ${HOME}/.bashrc
   fi
   set +e
+
+  echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+  echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+  source ${HOME}/.bashrc
 
   nvlog "END Installing CUDA"
 }
