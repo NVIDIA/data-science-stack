@@ -26,27 +26,20 @@ if [ ! -z "$_tmp" ]
 then
   WSL=true
   echo "WARNING: WSL detected. Support for WSL is alpha only."
+else
+  . /etc/os-release
+  OS_FLAVOR=$ID
+  OS_RELEASE=$VERSION_ID
 fi
 
-if [ -f /etc/redhat-release ]; then
-  if grep -q -i "release 7" /etc/redhat-release ; then
-    OS_FLAVOR="redhat7"
-    OS_RELEASE=7
-  elif grep -q -i "release 8" /etc/redhat-release ; then
-    OS_FLAVOR="redhat8"
-    OS_RELEASE=8
-  else
-    echo "Only Red Hat 7.x and 8.x flavors supported."
+case $OS_FLAVOR$OS_RELEASE in
+  ubuntu18.04 | ubuntu20.04 | rhel7 | rhel8 )
+    ;;
+  *)
+    echo "Unknown system type: $OS_FLAVOR $OS_RELEASE"
     exit 1
-  fi
-else
-  OS_FLAVOR="ubuntu"
-  OS_RELEASE=$(lsb_release -r | awk '{print $2}')
-  if [ $OS_RELEASE != "18.04" ] && [ $OS_RELEASE != "20.04" ]; then
-    echo "Only Ubuntu 18.04 and 20.04 supported."
-    exit 1
-  fi
-fi
+    ;;
+esac
 
 PIN_CONTAINER="frolvlad/alpine-miniconda3:python3.7"
 PIN_TMP="tmp.json"
@@ -109,7 +102,7 @@ install_base () {
       tzdata \
       wget \
       zlib1g-dev
-  elif [ $OS_FLAVOR = "redhat7" ]; then
+  elif [ $OS_FLAVOR$OS_RELEASE = "redhat7" ]; then
     sudo subscription-manager repos --enable rhel-7-workstation-devtools-rpms
     sudo subscription-manager repos --enable rhel-7-workstation-optional-rpms
     sudo subscription-manager repos --enable rhel-7-workstation-extras-rpms
@@ -323,7 +316,7 @@ install_cuda () {
       sudo apt-get -y install cuda-toolkit-11-0
     fi
   else
-    if [ $OS_FLAVOR = "redhat7" ]; then
+    if [ $OS_FLAVOR$OS_RELEASE = "redhat7" ]; then
       sudo yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
       sudo yum clean all
       sudo yum install -y cuda-toolkit-11-0
@@ -416,7 +409,7 @@ install_docker () {
       sudo systemctl restart docker
     fi
 
-  elif [ $OS_FLAVOR = "redhat7" ]; then
+  elif [ $OS_FLAVOR$OS_RELEASE = "redhat7" ]; then
     # NVIDIA Repos
     distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
     curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.repo | \
