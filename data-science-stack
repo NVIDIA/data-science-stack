@@ -127,7 +127,7 @@ install_base () {
       wget \
       which \
       yum-utils
-  else # RHEL 8
+  elif [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel8" ]; then
     sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm || true
     sudo yum groupinstall -y 'Development Tools'
     sudo yum install -y \
@@ -146,6 +146,9 @@ install_base () {
       wget \
       which \
       yum-utils
+  else
+    nvlog "ERROR: install_base(): unknown system type: $OS_FLAVOR $OS_RELEASE"
+    exit 1
   fi
   set +e
 
