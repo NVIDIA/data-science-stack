@@ -35,7 +35,7 @@ when needed. Do not run it with `sudo ...`
 On Ubuntu 18.04 or 20.04:
 
 ```bash
-git clone github.com/NVIDIA/data-science-stack
+git clone https://github.com/NVIDIA/data-science-stack
 cd data-science-stack
 ./data-science-stack setup-system
 ````
@@ -43,7 +43,7 @@ cd data-science-stack
 On Red Hat Enterprise Linux (RHEL) Workstation 7.x or 8.x:
 
 ```bash
-git clone github.com/NVIDIA/data-science-stack
+git clone https://github.com/NVIDIA/data-science-stack
 cd data-science-stack
 ./data-science-stack setup-system
 # script will stop, manually install driver ... (instructions below)
