@@ -362,6 +362,10 @@ install_cuda () {
       sudo dnf config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
       sudo dnf clean all
       sudo dnf -y install cuda-toolkit-11-0
+    elif [ $OS_FLAVOR$OS_RELEASE = "fedora32" ]; then
+      sudo dnf config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/fedora$(rpm -E %fedora)/x86_64/cuda-fedora$(rpm -E %fedora).repo
+      sudo dnf clean all
+      sudo dnf -y install cuda-toolkit-11-0
     else
       nvlog "ERROR: install_cuda(): unknown system type: $OS_FLAVOR $OS_RELEASE"
       exit 1
