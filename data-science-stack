@@ -366,9 +366,8 @@ install_docker () {
   set -e
   if [ $OS_FLAVOR = "ubuntu" ]; then
     # NVIDIA Repo
-    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
     curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+    curl -s -L https://nvidia.github.io/nvidia-docker/$OS_FLAVOR$OS_RELEASE/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
     # Docker Repo
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
     sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
@@ -411,8 +410,7 @@ install_docker () {
 
   elif [ $OS_FLAVOR$OS_RELEASE = "redhat7" ]; then
     # NVIDIA Repos
-    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.repo | \
+    curl -s -L https://nvidia.github.io/nvidia-docker/$OS_FLAVOR$OS_RELEASE/nvidia-docker.repo | \
       sudo tee /etc/yum.repos.d/nvidia-docker.repo
     # Docker Repo
     sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
@@ -443,8 +441,7 @@ install_docker () {
 
   else # RHEL 8
     # NVIDIA Repos
-    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.repo | \
+    curl -s -L https://nvidia.github.io/nvidia-docker/$OS_FLAVOR$OS_RELEASE/nvidia-docker.repo | \
       sudo tee /etc/yum.repos.d/nvidia-docker.repo
     # Docker Repo
     sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
