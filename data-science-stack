@@ -519,6 +519,23 @@ install_docker () {
       sudo systemctl restart docker
     fi
 
+  elif [ $OS_FLAVOR$OS_RELEASE = "fedora32" ]; then
+    sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+    sudo dnf -y remove podman-docker # XXX: this deserves a warning to the user
+    sudo dnf -y install docker-ce docker-ce-cli containerd.io
+
+    # XXX: nvidia-docker does not support Fedora, using RHEL 8.3 instead
+    sudo dnf config-manager --add-repo https://nvidia.github.io/nvidia-docker/rhel8.3/nvidia-docker.repo
+    sudo dnf -y install nvidia-docker2
+
+    # XXX: need to do something for WSL?
+    sudo systemctl start docker
+    sudo groupadd -f docker
+    sudo systemctl restart docker
+
+    # XXX: test docker with: docker run hello-world
+    # XXX: test nvidia-docker with: docker run --runtime=nvidia --rm nvidia/cuda:11.2.0-base nvidia-smi
+
   else
     nvlog "ERROR: install_docker(): unknown system type: $OS_FLAVOR $OS_RELEASE"
     exit 1
