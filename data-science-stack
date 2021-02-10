@@ -29,7 +29,7 @@ then
 else
   . /etc/os-release
   OS_FLAVOR=$ID
-  OS_RELEASE=$VERSION_ID
+  OS_RELEASE=${VERSION_ID%%.*} # extract major release, e.g. 1.2 -> 1, 1.2.3 -> 1
 fi
 
 case $OS_FLAVOR$OS_RELEASE in
