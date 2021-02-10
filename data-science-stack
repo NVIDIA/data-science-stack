@@ -215,6 +215,12 @@ EOF
     sudo apt-get -y install nvidia-driver-455
     sudo apt-get -y autoremove
     REBOOT=1
+  elif [ $OS_FLAVOR$OS_RELEASE = "rhel8" ]; then
+    sudo dnf -y update
+    sudo dnf -y install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm
+    sudo dnf -y install https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-$(rpm -E %rhel).noarch.rpm
+    sudo dnf -y install akmod-nvidia xorg-x11-drv-nvidia-cuda
+    REBOOT=1
   else
     nvlog "Automated NVIDIA driver install on Red Hat is not supported."
     nvlog "Please install NVIDIA driver $MIN_DRIVER or newer and run again."
