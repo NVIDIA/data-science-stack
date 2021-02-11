@@ -29,12 +29,12 @@ then
 else
   . /etc/os-release
   OS_FLAVOR=$ID
-  OS_RELEASE=${VERSION_ID%%.*} # extract major release, e.g. 1.2 -> 1, 1.2.3 -> 1
-  OS_RELEASE_FULL=$VERSION_ID
+  OS_RELEASE=$VERSION_ID
+  OS_RELEASE_MAJOR=${VERSION_ID%%.*} # extract major release, e.g. 1.2 -> 1, 1.2.3 -> 1
 fi
 
 case $OS_FLAVOR$OS_RELEASE in
-  ubuntu18.04 | ubuntu20.04 | rhel7 | rhel8 )
+  ubuntu18.04 | ubuntu20.04 | rhel7* | rhel8* )
     ;;
   *)
     echo "Unknown system type: $OS_FLAVOR $OS_RELEASE"
@@ -103,7 +103,7 @@ install_base () {
       tzdata \
       wget \
       zlib1g-dev
-  elif [ $OS_FLAVOR$OS_RELEASE = "rhel7" ]; then
+  elif [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel7" ]; then
     sudo subscription-manager repos --enable rhel-7-workstation-devtools-rpms
     sudo subscription-manager repos --enable rhel-7-workstation-optional-rpms
     sudo subscription-manager repos --enable rhel-7-workstation-extras-rpms
@@ -317,7 +317,7 @@ install_cuda () {
       sudo apt-get -y install cuda-toolkit-11-0
     fi
   else
-    if [ $OS_FLAVOR$OS_RELEASE = "rhel7" ]; then
+    if [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel7" ]; then
       sudo yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
       sudo yum clean all
       sudo yum install -y cuda-toolkit-11-0
@@ -368,7 +368,7 @@ install_docker () {
   if [ $OS_FLAVOR = "ubuntu" ]; then
     # NVIDIA Repo
     curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-    curl -s -L https://nvidia.github.io/nvidia-docker/$OS_FLAVOR$OS_RELEASE_FULL/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+    curl -s -L https://nvidia.github.io/nvidia-docker/$OS_FLAVOR$OS_RELEASE/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
     # Docker Repo
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
     sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
@@ -409,9 +409,9 @@ install_docker () {
       sudo systemctl restart docker
     fi
 
-  elif [ $OS_FLAVOR$OS_RELEASE = "rhel7" ]; then
+  elif [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel7" ]; then
     # NVIDIA Repos
-    curl -s -L https://nvidia.github.io/nvidia-docker/$OS_FLAVOR$OS_RELEASE_FULL/nvidia-docker.repo | \
+    curl -s -L https://nvidia.github.io/nvidia-docker/$OS_FLAVOR$OS_RELEASE/nvidia-docker.repo | \
       sudo tee /etc/yum.repos.d/nvidia-docker.repo
     # Docker Repo
     sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
@@ -442,7 +442,7 @@ install_docker () {
 
   else # RHEL 8
     # NVIDIA Repos
-    curl -s -L https://nvidia.github.io/nvidia-docker/$OS_FLAVOR$OS_RELEASE_FULL/nvidia-docker.repo | \
+    curl -s -L https://nvidia.github.io/nvidia-docker/$OS_FLAVOR$OS_RELEASE/nvidia-docker.repo | \
       sudo tee /etc/yum.repos.d/nvidia-docker.repo
     # Docker Repo
     sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
