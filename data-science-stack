@@ -26,12 +26,12 @@ if [ ! -z "$_tmp" ]
 then
   WSL=true
   echo "WARNING: WSL detected. Support for WSL is alpha only."
-else
-  . /etc/os-release
-  OS_FLAVOR=$ID
-  OS_RELEASE=$VERSION_ID
-  OS_RELEASE_MAJOR=${VERSION_ID%%.*} # extract major release, e.g. 1.2 -> 1, 1.2.3 -> 1
 fi
+
+. /etc/os-release
+OS_FLAVOR=$ID
+OS_RELEASE=$VERSION_ID
+OS_RELEASE_MAJOR=${VERSION_ID%%.*} # extract major release, e.g. 1.2 -> 1, 1.2.3 -> 1
 
 case $OS_FLAVOR$OS_RELEASE in
   ubuntu18.04 | ubuntu20.04 | rhel7* | rhel8* )
