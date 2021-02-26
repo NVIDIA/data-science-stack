@@ -221,7 +221,7 @@ EOF
     sudo dnf -y module install nvidia-driver:460-dkms
     # REBOOT not necessary
   else
-    nvlog "Automated NVIDIA driver install on $OS_FLAVOR $OS_RELEASE_FULL is not supported."
+    nvlog "Automated NVIDIA driver install on $OS_FLAVOR $OS_RELEASE is not supported."
     nvlog "Please install NVIDIA driver $MIN_DRIVER or newer and run again."
     exit 1
   fi
