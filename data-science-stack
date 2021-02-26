@@ -460,7 +460,8 @@ install_docker () {
 
     sudo yum install -y \
       docker-ce \
-      nvidia-container-toolkit
+      nvidia-container-toolkit \
+      iptables
     sudo systemctl enable docker
     if [ "$WSL" = true ] 
     then
