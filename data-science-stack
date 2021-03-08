@@ -1179,10 +1179,10 @@ Other Subcommands:
         DANGER: Purge the local Kubernetes stack installed with this
         script's install-kubernetes command.
     install-tools
-        Install the local tools (jupyter-repo2docker, ngc cli, kaggle cli)
+        Install the local tools (jupyter-repo2docker, ngc cli, kaggle cli, aws cli)
     purge-tools
-        DANGER: Purge local tools (currently, only jupyter-repo2docker)
-        script's install-kubernetes command.
+        DANGER: Purge local tools installed with this
+        script's install-tools command.
 
 EOF
 }
