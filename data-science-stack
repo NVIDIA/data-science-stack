@@ -1018,6 +1018,7 @@ install_aws_cli() {
   else
     docker pull "${AWS_DOCKER_IMAGE}"
     rc=0
+  fi
   nvlog "END AWS CLI install"
   nvlog "Use: docker ${AWS_DOCKER_IMAGE} command, e.g. docker ${AWS_DOCKER_IMAGE} --version"
   return $rc
