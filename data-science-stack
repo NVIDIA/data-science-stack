@@ -215,7 +215,7 @@ EOF
     sudo add-apt-repository -y ppa:graphics-drivers/ppa
     sudo apt-get -y update
     sudo apt-get -y upgrade
-    sudo apt-get -y install nvidia-driver-455
+    sudo apt-get -y install nvidia-driver-460
     sudo apt-get -y autoremove
     REBOOT=1
   elif [ $OS_FLAVOR$OS_RELEASE = "rhel8" ]; then
