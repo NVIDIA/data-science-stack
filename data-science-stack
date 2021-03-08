@@ -21,6 +21,7 @@ DEFAULT_NOTEBOOKS_DIR=${HOME}/data-science-stack-${STACK_VERSION}
 NOTEBOOKS_DIR=${NOTEBOOKS_DIR:-$DEFAULT_NOTEBOOKS_DIR}
 
 KAGGLE_DOCKER_IMAGE=gcr.io/kaggle-gpu-images/python
+AWS_DOCKER_IMAGE=amazon/aws-cli
 
 WSL=false
 _tmp=`uname -a | grep microsoft`
@@ -1006,6 +1007,30 @@ purge_kaggle_cli() {
 
 }
 
+install_aws_cli() {
+  rc=0
+  nvlog "START AWS CLI install"
+  nvlog "support is provided via AWS docker image"
+  if [ "${DOCKER_VER}" = 0 ]
+  then
+    nvlog "docker is not installed. Cannot proceed"
+    rc=-1
+  else
+    docker pull "${AWS_DOCKER_IMAGE}"
+    rc=0
+  nvlog "END AWS CLI install"
+  nvlog "Use: docker ${AWS_DOCKER_IMAGE} command, e.g. docker ${AWS_DOCKER_IMAGE} --version"
+  return $rc
+}
+
+purge_aws_cli() {
+  nvlog "START AWS CLI purge"
+  docker rmi "${AWS_DOCKER_IMAGE}"
+  nvlog "END AWS CLI purge"
+
+}
+
+
 
 purge_kubernetes() {
   nvlog "START Kubernetes purge with kubeadm"
@@ -1376,6 +1401,7 @@ case "$1" in
     install_jupyter-repo2docker
     install_ngc_cli
     install_kaggle_cli
+    install_aws_cli
     nvlog "please logout and login again"
     ;;
   purge-tools)
@@ -1383,6 +1409,7 @@ case "$1" in
     purge_jupyter-repo2docker
     purge_ngc_cli
     purge_kaggle_cli
+    purge_aws_cli
     ;;
 
   help)
