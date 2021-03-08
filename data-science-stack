@@ -966,6 +966,30 @@ purge_jupyter-repo2docker() {
   nvlog "END jupyter-repo2docker purge"
 }
 
+install_ngc_cli() {
+  nvlog "START NGC CLI install"
+  
+  if [ ! -d "${HOME}/.local/bin" ]
+  then
+    mkdir -p "${HOME}/.local/bin"
+  fi
+  pushd "${HOME}/.local/bin"
+  wget -O ngccli_cat_linux.zip https://ngc.nvidia.com/downloads/ngccli_cat_linux.zip && unzip -o ngccli_cat_linux.zip && chmod u+x ngc && rm ngccli_cat_linux.zip
+  popd
+  nvlog "END NCG CLI install. Please use 'ngc config set' to start using the cli"
+}
+
+purge_ngc_cli() {
+  nvlog "START NGC CLI purge"
+  
+  if [ ! -f "${HOME}/.local/bin/ngc" ]
+  then
+    rm "${HOME}/.local/bin/ngc"
+    nvlog "NGC CLI purged"
+  fi
+  nvlog "END NGC CLI purge."
+}
+
 
 purge_kubernetes() {
   nvlog "START Kubernetes purge with kubeadm"
@@ -1321,11 +1345,13 @@ case "$1" in
   install-tools)
     require_user
     install_jupyter-repo2docker
+    install_ngc_cli
     nvlog "please logout and login again"
     ;;
   purge-tools)
     require_user
     purge_jupyter-repo2docker
+    purge_ngc_cli
     ;;
 
   help)
