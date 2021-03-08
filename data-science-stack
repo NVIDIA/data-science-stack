@@ -990,6 +990,20 @@ purge_ngc_cli() {
   nvlog "END NGC CLI purge."
 }
 
+install_kaggle_cli() {
+  nvlog "START Kaggle CLI install"
+  pip3 install -U kaggle
+  nvlog "END Kaggle CLI install"
+
+}
+
+purge_kaggle_cli() {
+  nvlog "START Kaggle CLI purge"
+  pip3 uninstall -y kaggle
+  nvlog "END Kaggle CLI purge"
+
+}
+
 
 purge_kubernetes() {
   nvlog "START Kubernetes purge with kubeadm"
@@ -1137,7 +1151,7 @@ Other Subcommands:
         DANGER: Purge the local Kubernetes stack installed with this
         script's install-kubernetes command.
     install-tools
-        Install the local tools (currently, only jupyter-repo2docker, but this list may grow over time)
+        Install the local tools (jupyter-repo2docker, ngc cli, kaggle cli)
     purge-tools
         DANGER: Purge local tools (currently, only jupyter-repo2docker)
         script's install-kubernetes command.
@@ -1346,12 +1360,14 @@ case "$1" in
     require_user
     install_jupyter-repo2docker
     install_ngc_cli
+    install_kaggle_cli
     nvlog "please logout and login again"
     ;;
   purge-tools)
     require_user
     purge_jupyter-repo2docker
     purge_ngc_cli
+    purge_kaggle_cli
     ;;
 
   help)
