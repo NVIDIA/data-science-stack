@@ -105,6 +105,7 @@ install_base () {
       screen \
       tzdata \
       wget \
+      unzip \
       zlib1g-dev
   elif [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel7" ]; then
     sudo subscription-manager repos --enable rhel-7-workstation-devtools-rpms
