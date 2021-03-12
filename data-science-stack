@@ -986,7 +986,7 @@ install_ngc_cli() {
 purge_ngc_cli() {
   nvlog "START NGC CLI purge"
   
-  if [ ! -f "${HOME}/.local/bin/ngc" ]
+  if [ -f "${HOME}/.local/bin/ngc" ]
   then
     rm "${HOME}/.local/bin/ngc"
     nvlog "NGC CLI purged"
