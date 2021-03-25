@@ -34,7 +34,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -y --fix-missing \
 
 ARG STACK_VERSION=2.8.0-dev
 ARG CONDA_VERSION=4.8.3
-ARG RAPIDS_VERSION=0.17
+ARG NOTEBOOKS_VERSION=0.18
 
 ENV CONDA_ROOT=/conda
 ENV NOTEBOOKS_DIR=/notebooks
@@ -50,7 +50,7 @@ RUN curl https://repo.anaconda.com/miniconda/Miniconda3-py37_${CONDA_VERSION}-Li
     && chmod 755 /run-jupyter \
     && mkdir -p ${NOTEBOOKS_DIR} \
     && cd ${NOTEBOOKS_DIR} \
-    && git clone --single-branch --depth 1 --branch branch-${RAPIDS_VERSION} \
+    && git clone --single-branch --depth 1 --branch branch-${NOTEBOOKS_VERSION} \
       https://github.com/rapidsai/notebooks.git \
     && cd notebooks \
     && git submodule update --init --remote \
