@@ -219,7 +219,7 @@ EOF
     sudo apt-get -y install nvidia-driver-460
     sudo apt-get -y autoremove
     REBOOT=1
-  elif [ $OS_FLAVOR$OS_RELEASE = "rhel8" ]; then
+  elif [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel8" ]; then
     sudo dnf config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
     sudo dnf install -y kernel-devel-$(uname -r) kernel-headers-$(uname -r)
     sudo dnf -y module install nvidia-driver:460-dkms
