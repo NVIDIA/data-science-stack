@@ -63,8 +63,8 @@ COPY environment-pinned.yaml /
 
 RUN ${CONDA_ROOT}/bin/conda env create -n data-science-stack-${STACK_VERSION} \
        -f /environment-pinned.yaml \
-    && echo "conda activate data-science-stack-${STACK_VERSION}" >> ${HOME}/.bashrc 
-RUN bash -c 'source ${CONDA_ROOT}/bin/activate data-science-stack-${STACK_VERSION} ; \
+    && echo "conda activate data-science-stack-${STACK_VERSION}" >> ${HOME}/.bashrc \
+    && bash -c 'source ${CONDA_ROOT}/bin/activate data-science-stack-${STACK_VERSION} ; \
       jupyter labextension install -y --clean \
         @jupyter-widgets/jupyterlab-manager \
         jupyter-threejs \
