@@ -6,7 +6,7 @@ IMG=foo
 
 # use 128 for 16G cards
 # batch size 16 takes less than 5 GB of GPU mem
-BATCH_SIZE=128
+BATCH_SIZE=256
 RUN_EPOCHS=15
 # set to 0 for a CPU only test
 # on a multi-gpu machine, setting to > 1 works
