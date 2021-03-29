@@ -32,7 +32,7 @@ _For usage and command documentation: `./data-science-stack help` at any time._
 _Note: The script is designed to run as the user, and ask for sudo password
 when needed. Do not run it with `sudo ...`
 
-On Ubuntu 18.04 or 20.04:
+On Ubuntu 18.04, 20.04, or Red Hat Enterprise Linux (RHEL) 8.x:
 
 ```bash
 git clone https://github.com/NVIDIA/data-science-stack
@@ -40,7 +40,7 @@ cd data-science-stack
 ./data-science-stack setup-system
 ````
 
-On Red Hat Enterprise Linux (RHEL) Workstation 7.x or 8.x:
+On RHEL Workstation 7.x:
 
 ```bash
 git clone https://github.com/NVIDIA/data-science-stack
@@ -207,7 +207,7 @@ The minimum version of the NVIDIA driver supported is 460.39.
 More recent drivers may be available, but may not have been tested with the
 data science stacks.
 
-### Ubuntu Driver Install
+### Ubuntu or RHEL v8.x Driver Install
 
 Driver install for Ubuntu is handled by `data-science-stack setup-system`
 so no manual install should be required.
@@ -222,7 +222,7 @@ be removed (this may have side effects, read the warnings) and reinstalled:
 # reboot
 ```
 
-### Red Hat Enterprise Linux Workstation (RHEL) Driver Install
+### RHEL v7.x Driver Install
 
 Before attempting to install the driver check that the system does not
 have `/usr/bin/nvidia-uninstall` which is left by an old driver .run file.
