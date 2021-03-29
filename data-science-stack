@@ -1027,7 +1027,7 @@ install_aws_cli() {
 
 purge_aws_cli() {
   nvlog "START AWS CLI purge"
-  docker rmi "${AWS_DOCKER_IMAGE}"
+  docker rmi -f "${AWS_DOCKER_IMAGE}"
   nvlog "END AWS CLI purge"
 
 }
