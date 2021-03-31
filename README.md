@@ -32,18 +32,18 @@ _For usage and command documentation: `./data-science-stack help` at any time._
 _Note: The script is designed to run as the user, and ask for sudo password
 when needed. Do not run it with `sudo ...`
 
-On Ubuntu 18.04 or 20.04:
+On Ubuntu 18.04, 20.04, or Red Hat Enterprise Linux (RHEL) 8.x:
 
 ```bash
-git clone github.com/NVIDIA/data-science-stack
+git clone https://github.com/NVIDIA/data-science-stack
 cd data-science-stack
 ./data-science-stack setup-system
 ````
 
-On Red Hat Enterprise Linux (RHEL) Workstation 7.x or 8.x:
+On RHEL Workstation 7.x:
 
 ```bash
-git clone github.com/NVIDIA/data-science-stack
+git clone https://github.com/NVIDIA/data-science-stack
 cd data-science-stack
 ./data-science-stack setup-system
 # script will stop, manually install driver ... (instructions below)
@@ -140,6 +140,13 @@ From the command line in your environment, or inside the container, the
 since the notebooks can depend on functions only available when using
 Jupyter's web UI.
 
+### Local Tools
+Version 2.7.0 introduced the `install-tools` command (paired with `purge-tools`), which extends the functionality of the stack. Currently, the list includes:
+* [jupyter-repo2docker](https://github.com/jupyterhub/repo2docker) Point it to a github repository and it will create a docker container, and launch a jupyter notebook inside it
+* [Nvidia GPU Cloud CLI](https://ngc.nvidia.com)  This is perhaps the easiest way to interact with Nvidia assets
+* [Kaggle CLI](https://github.com/Kaggle/kaggle-api) Allows users to sync up and manage Kaggle kernels, datasets, etc. locally
+* [AWS CLI](https://github.com/aws/aws-cli) Allows users to remotely manage resources in AWS. The stack supports it via docker, so make sure you have docker installed.
+
 ### Creating Custom Stacks
 
 Creating custom environments is covered in the
@@ -196,11 +203,11 @@ Then, create a a Ubuntu or RHEL VM, open a terminal, and follow OS-specific inst
 ## Installing the NVIDIA GPU Driver
 
 It is important that updated NVIDIA drivers are installed on the system.
-The minimum version of the NVIDIA driver supported is 455.23.04.
+The minimum version of the NVIDIA driver supported is 460.39.
 More recent drivers may be available, but may not have been tested with the
 data science stacks.
 
-### Ubuntu Driver Install
+### Ubuntu or RHEL v8.x Driver Install
 
 Driver install for Ubuntu is handled by `data-science-stack setup-system`
 so no manual install should be required.
@@ -215,7 +222,7 @@ be removed (this may have side effects, read the warnings) and reinstalled:
 # reboot
 ```
 
-### Red Hat Enterprise Linux Workstation (RHEL) Driver Install
+### RHEL v7.x Driver Install
 
 Before attempting to install the driver check that the system does not
 have `/usr/bin/nvidia-uninstall` which is left by an old driver .run file.
@@ -297,8 +304,8 @@ Download and install the driver:
 
 ```bash
 # Check for the latest before using - https://www.nvidia.com/Download/index.aspx
-wget http://us.download.nvidia.com/XFree86/Linux-x86_64/455.23.04/NVIDIA-Linux-x86_64-455.23.04.run
-sudo sh ./NVIDIA-Linux-x86_64-455.23.04.run
+wget https://us.download.nvidia.com/XFree86/Linux-x86_64/460.56/NVIDIA-Linux-x86_64-460.56.run
+sudo sh ./NVIDIA-Linux-x86_64-460.56.run
 ```
 
 > **Note**: In some cases the following prompts will occur:
@@ -559,7 +566,7 @@ script will let you know how to remove the old driver.
 
 ### How much disk space is needed?
 
-About 30GB free should be enough. A lot of space is needed during
+About 50GB free should be enough. A lot of space is needed during
 environment/container creation since Conda has a package cache.
 
 ### The script is failing after it cannot reach URLs or download files

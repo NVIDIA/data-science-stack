@@ -3,12 +3,12 @@
 # Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 
 # Global Paramaters
-STACK_VERSION=2.7.0
-NOTEBOOKS_VERSION=0.17
+STACK_VERSION=2.8.0
+NOTEBOOKS_VERSION=0.18
 
-MIN_DRIVER=455.23.04
+MIN_DRIVER=460.39
 MIN_CUDA=11.0.228
-MIN_DOCKER=19.03.4
+MIN_DOCKER=20.10.3
 MIN_CONDA=4.8.3
 
 SCRIPT_NAME=$(basename $0)
@@ -20,6 +20,9 @@ CONDA_ROOT=${HOME}/conda
 DEFAULT_NOTEBOOKS_DIR=${HOME}/data-science-stack-${STACK_VERSION}
 NOTEBOOKS_DIR=${NOTEBOOKS_DIR:-$DEFAULT_NOTEBOOKS_DIR}
 
+KAGGLE_DOCKER_IMAGE=gcr.io/kaggle-gpu-images/python
+AWS_DOCKER_IMAGE=amazon/aws-cli
+
 WSL=false
 _tmp=`uname -a | grep microsoft`
 if [ ! -z "$_tmp" ]
@@ -28,25 +31,19 @@ then
   echo "WARNING: WSL detected. Support for WSL is alpha only."
 fi
 
-if [ -f /etc/redhat-release ]; then
-  if grep -q -i "release 7" /etc/redhat-release ; then
-    OS_FLAVOR="redhat7"
-    OS_RELEASE=7
-  elif grep -q -i "release 8" /etc/redhat-release ; then
-    OS_FLAVOR="redhat8"
-    OS_RELEASE=8
-  else
-    echo "Only Red Hat 7.x and 8.x flavors supported."
+. /etc/os-release
+OS_FLAVOR=$ID
+OS_RELEASE=$VERSION_ID
+OS_RELEASE_MAJOR=${VERSION_ID%%.*} # extract major release, e.g. 1.2 -> 1, 1.2.3 -> 1
+
+case $OS_FLAVOR$OS_RELEASE in
+  ubuntu18.04 | ubuntu20.04 | rhel7* | rhel8* )
+    ;;
+  *)
+    echo "Unknown system type: $OS_FLAVOR $OS_RELEASE"
     exit 1
-  fi
-else
-  OS_FLAVOR="ubuntu"
-  OS_RELEASE=$(lsb_release -r | awk '{print $2}')
-  if [ $OS_RELEASE != "18.04" ] && [ $OS_RELEASE != "20.04" ]; then
-    echo "Only Ubuntu 18.04 and 20.04 supported."
-    exit 1
-  fi
-fi
+    ;;
+esac
 
 PIN_CONTAINER="frolvlad/alpine-miniconda3:python3.7"
 PIN_TMP="tmp.json"
@@ -108,8 +105,9 @@ install_base () {
       screen \
       tzdata \
       wget \
+      unzip \
       zlib1g-dev
-  elif [ $OS_FLAVOR = "redhat7" ]; then
+  elif [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel7" ]; then
     sudo subscription-manager repos --enable rhel-7-workstation-devtools-rpms
     sudo subscription-manager repos --enable rhel-7-workstation-optional-rpms
     sudo subscription-manager repos --enable rhel-7-workstation-extras-rpms
@@ -218,11 +216,16 @@ EOF
     sudo add-apt-repository -y ppa:graphics-drivers/ppa
     sudo apt-get -y update
     sudo apt-get -y upgrade
-    sudo apt-get -y install nvidia-driver-455
+    sudo apt-get -y install nvidia-driver-460
     sudo apt-get -y autoremove
     REBOOT=1
+  elif [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel8" ]; then
+    sudo dnf config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
+    sudo dnf install -y kernel-devel-$(uname -r) kernel-headers-$(uname -r)
+    sudo dnf -y module install nvidia-driver:460-dkms
+    # REBOOT not necessary
   else
-    nvlog "Automated NVIDIA driver install on Red Hat is not supported."
+    nvlog "Automated NVIDIA driver install on $OS_FLAVOR $OS_RELEASE_FULL is not supported."
     nvlog "Please install NVIDIA driver $MIN_DRIVER or newer and run again."
     exit 1
   fi
@@ -313,10 +316,6 @@ install_cuda () {
       sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
       sudo apt-get update
       sudo apt-get -y install cuda-toolkit-11-0
-
-      echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-      echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-      source ${HOME}/.bashrc
     else
       curl https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin \
         -o cuda.pin
@@ -325,13 +324,9 @@ install_cuda () {
       sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
       sudo apt-get update
       sudo apt-get -y install cuda-toolkit-11-0
-
-      echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-      echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-      source ${HOME}/.bashrc
     fi
   else
-    if [ $OS_FLAVOR = "redhat7" ]; then
+    if [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel7" ]; then
       sudo yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
       sudo yum clean all
       sudo yum install -y cuda-toolkit-11-0
@@ -340,12 +335,12 @@ install_cuda () {
       sudo dnf clean all
       sudo dnf -y install cuda-toolkit-11-0
     fi
-
-    echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-    echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-    source ${HOME}/.bashrc
   fi
   set +e
+
+  echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+  echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+  source ${HOME}/.bashrc
 
   nvlog "END Installing CUDA"
 }
@@ -381,9 +376,8 @@ install_docker () {
   set -e
   if [ $OS_FLAVOR = "ubuntu" ]; then
     # NVIDIA Repo
-    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
     curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+    curl -s -L https://nvidia.github.io/nvidia-docker/$OS_FLAVOR$OS_RELEASE/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
     # Docker Repo
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
     sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
@@ -424,10 +418,9 @@ install_docker () {
       sudo systemctl restart docker
     fi
 
-  elif [ $OS_FLAVOR = "redhat7" ]; then
+  elif [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel7" ]; then
     # NVIDIA Repos
-    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.repo | \
+    curl -s -L https://nvidia.github.io/nvidia-docker/$OS_FLAVOR$OS_RELEASE/nvidia-docker.repo | \
       sudo tee /etc/yum.repos.d/nvidia-docker.repo
     # Docker Repo
     sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
@@ -458,8 +451,7 @@ install_docker () {
 
   else # RHEL 8
     # NVIDIA Repos
-    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.repo | \
+    curl -s -L https://nvidia.github.io/nvidia-docker/$OS_FLAVOR$OS_RELEASE/nvidia-docker.repo | \
       sudo tee /etc/yum.repos.d/nvidia-docker.repo
     # Docker Repo
     sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
@@ -622,6 +614,11 @@ install_miniconda () {
 
 create_conda_env () {
   nvlog "START Setup Conda Env - env:${ENVIRONMENT_NAME} => ${ENVIRONMENT_NAME}-${STACK_VERSION}"
+
+  if [ ! -f $RUNFROM/environments/${ENVIRONMENT_NAME}-pinned.yaml ]; then
+      nvlog "ERROR: unknown environment '${ENVIRONMENT_NAME}', try $0 list"
+      exit 1
+  fi
 
   ${CONDA_ROOT}/bin/conda env create -n ${ENVIRONMENT_NAME}-${STACK_VERSION} \
     -f $RUNFROM/environments/${ENVIRONMENT_NAME}-pinned.yaml
@@ -973,6 +970,69 @@ purge_jupyter-repo2docker() {
   nvlog "END jupyter-repo2docker purge"
 }
 
+install_ngc_cli() {
+  nvlog "START NGC CLI install"
+  
+  if [ ! -d "${HOME}/.local/bin" ]
+  then
+    mkdir -p "${HOME}/.local/bin"
+  fi
+  pushd "${HOME}/.local/bin"
+  wget -O ngccli_cat_linux.zip https://ngc.nvidia.com/downloads/ngccli_cat_linux.zip && unzip -o ngccli_cat_linux.zip && chmod u+x ngc && rm ngccli_cat_linux.zip
+  popd
+  nvlog "END NCG CLI install. Please use 'ngc config set' to start using the cli"
+}
+
+purge_ngc_cli() {
+  nvlog "START NGC CLI purge"
+  
+  if [ -f "${HOME}/.local/bin/ngc" ]
+  then
+    rm "${HOME}/.local/bin/ngc"
+    nvlog "NGC CLI purged"
+  fi
+  nvlog "END NGC CLI purge."
+}
+
+install_kaggle_cli() {
+  nvlog "START Kaggle CLI install"
+  pip3 install -U kaggle
+  nvlog "END Kaggle CLI install"
+
+}
+
+purge_kaggle_cli() {
+  nvlog "START Kaggle CLI purge"
+  pip3 uninstall -y kaggle
+  nvlog "END Kaggle CLI purge"
+
+}
+
+install_aws_cli() {
+  rc=0
+  nvlog "START AWS CLI install"
+  nvlog "support is provided via AWS docker image"
+  if [ "${DOCKER_VER}" = 0 ]
+  then
+    nvlog "docker is not installed. Cannot proceed"
+    rc=-1
+  else
+    docker pull "${AWS_DOCKER_IMAGE}"
+    rc=0
+  fi
+  nvlog "END AWS CLI install"
+  nvlog "Use: docker ${AWS_DOCKER_IMAGE} command, e.g. docker ${AWS_DOCKER_IMAGE} --version"
+  return $rc
+}
+
+purge_aws_cli() {
+  nvlog "START AWS CLI purge"
+  docker rmi -f "${AWS_DOCKER_IMAGE}"
+  nvlog "END AWS CLI purge"
+
+}
+
+
 
 purge_kubernetes() {
   nvlog "START Kubernetes purge with kubeadm"
@@ -1120,10 +1180,10 @@ Other Subcommands:
         DANGER: Purge the local Kubernetes stack installed with this
         script's install-kubernetes command.
     install-tools
-        Install the local tools (currently, only jupyter-repo2docker, but this list may grow over time)
+        Install the local tools (jupyter-repo2docker, ngc cli, kaggle cli, aws cli)
     purge-tools
-        DANGER: Purge local tools (currently, only jupyter-repo2docker)
-        script's install-kubernetes command.
+        DANGER: Purge local tools installed with this
+        script's install-tools command.
 
 EOF
 }
@@ -1192,11 +1252,24 @@ case "$1" in
     ;;
 
   run-container)
-    ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
-    nvlog "Running NVIDIA Data Science container, accessible at http://localhost:8888/"
+
+    nvlog "Running docker container, accessible at http://localhost:8888/"
     nvlog "Be sure your machine is not exposed to the internet."
-    nvlog "Command: docker run --gpus all --rm -it -p 8888:8888 -p 8787:8787 -p 8786:8786 ${ENVIRONMENT_NAME}:${STACK_VERSION}"
-    docker run --gpus all --rm -it -p 8888:8888 -p 8787:8787 -p 8786:8786 ${ENVIRONMENT_NAME}:${STACK_VERSION}
+
+    if [ "${2}" = "kaggle" ]
+    then
+      IMG=${KAGGLE_DOCKER_IMAGE}
+      nvlog "Command: docker run --gpus all --rm -it -p 8888:8080 ${IMG}"
+      docker run --gpus all --rm -it -p 8888:8080 ${IMG}      
+    else
+      ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
+      IMG=${ENVIRONMENT_NAME}:${STACK_VERSION}
+      nvlog "Command: docker run --gpus all --rm -it -p 8888:8888 -p 8787:8787 -p 8786:8786 ${IMG}"
+      docker run --gpus all --rm -it -p 8888:8888 -p 8787:8787 -p 8786:8786 ${IMG}
+    fi
+    
+
+
     ;;
 
   run-jupyter)
@@ -1328,11 +1401,17 @@ case "$1" in
   install-tools)
     require_user
     install_jupyter-repo2docker
+    install_ngc_cli
+    install_kaggle_cli
+    install_aws_cli
     nvlog "please logout and login again"
     ;;
   purge-tools)
     require_user
     purge_jupyter-repo2docker
+    purge_ngc_cli
+    purge_kaggle_cli
+    purge_aws_cli
     ;;
 
   help)
