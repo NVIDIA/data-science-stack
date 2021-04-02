@@ -80,8 +80,8 @@ dependencies:
   - conda-forge::colorcet=2.0.6
   - conda-forge::cryptography=3.4.4
   - nvidia::cudatoolkit=11.0.221
-  - rapidsai::cudf=0.18.0
-  - rapidsai::cudf_kafka=0.18.0
+  - rapidsai::cudf=0.18.1
+  - rapidsai::cudf_kafka=0.18.1
   - nvidia::cudnn=8.0.0
   - rapidsai::cugraph=0.18.0
   - rapidsai::cuml=0.18.0
@@ -89,7 +89,7 @@ dependencies:
   - conda-forge::curl=7.75.0
   - rapidsai::cusignal=0.18.0
   - rapidsai::cuspatial=0.18.0
-  - rapidsai::custreamz=0.18.0
+  - rapidsai::custreamz=0.18.1
   - rapidsai::cuxfilter=0.18.0
   - conda-forge::cycler=0.10.0
   - conda-forge::cymem=2.0.5
@@ -99,7 +99,7 @@ dependencies:
   - conda-forge::dask=2021.3.0
   - conda-forge::dask-core=2021.3.0
   - rapidsai::dask-cuda=0.18.0
-  - rapidsai::dask-cudf=0.18.0
+  - rapidsai::dask-cudf=0.18.1
   - conda-forge::dask-glm=0.2.0
   - conda-forge::dask-jobqueue=0.7.2
   - conda-forge::dask-kubernetes=0.11.0
@@ -223,8 +223,8 @@ dependencies:
   - conda-forge::libcblas=3.9.0
   - conda-forge::libclang=11.1.0
   - conda-forge::libcrc32c=1.1.1
-  - rapidsai::libcudf=0.18.0
-  - rapidsai::libcudf_kafka=0.18.0
+  - rapidsai::libcudf=0.18.1
+  - rapidsai::libcudf_kafka=0.18.1
   - rapidsai::libcugraph=0.18.0
   - rapidsai::libcuml=0.18.0
   - nvidia::libcumlprims=0.18.0
