@@ -1,0 +1,18 @@
+description: object_detection_standard
+environment:
+  image: "determinedaicustomer/fasterrcnn-resnet50:pennfudan"
+entrypoint: model_def:ObjectDetectionModel
+hyperparameters:
+  global_batch_size: 4 
+  learning_rate: 0.000125
+  momentum: 0.75
+  weight_decay: 0.0005
+searcher:
+  max_length:
+    epochs: 1
+  metric: val_avg_iou
+  name: single
+  smaller_is_better: false
+records_per_epoch: 136
+min_validation_period:
+  batches: 12
