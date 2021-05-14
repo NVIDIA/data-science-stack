@@ -6,7 +6,7 @@
 STACK_VERSION=2.9.0-dev
 NOTEBOOKS_VERSION=0.19
 
-MIN_DRIVER=460.39
+MIN_DRIVER=465.27
 MIN_CUDA=11.0.228
 MIN_DOCKER=20.10.3
 MIN_CONDA=4.8.3
@@ -216,13 +216,13 @@ EOF
     sudo add-apt-repository -y ppa:graphics-drivers/ppa
     sudo apt-get -y update
     sudo apt-get -y upgrade
-    sudo apt-get -y install nvidia-driver-460
+    sudo apt-get -y install nvidia-driver-465
     sudo apt-get -y autoremove
     REBOOT=1
   elif [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel8" ]; then
     sudo dnf config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
     sudo dnf install -y kernel-devel-$(uname -r) kernel-headers-$(uname -r)
-    sudo dnf -y module install nvidia-driver:460-dkms
+    sudo dnf -y module install nvidia-driver:465-dkms
     # REBOOT not necessary
   else
     nvlog "Automated NVIDIA driver install on $OS_FLAVOR $OS_RELEASE_FULL is not supported."
