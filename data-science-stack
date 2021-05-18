@@ -7,7 +7,7 @@ STACK_VERSION=2.9.0-dev
 NOTEBOOKS_VERSION=0.19
 
 MIN_DRIVER=465.27
-MIN_CUDA=11.0.228
+MIN_CUDA=11.2.152
 MIN_DOCKER=20.10.3
 MIN_CONDA=4.8.3
 
@@ -45,7 +45,7 @@ case $OS_FLAVOR$OS_RELEASE in
     ;;
 esac
 
-PIN_CONTAINER="frolvlad/alpine-miniconda3:python3.7"
+PIN_CONTAINER="mambaorg/micromamba:0.13.1"
 PIN_TMP="tmp.json"
 
 REBOOT=0
@@ -285,7 +285,9 @@ EOF
 
 
 detect_cuda () {
-  if [ -f /usr/local/cuda/version.txt ]; then
+  if [ -f /usr/local/cuda/version.json ]; then
+    CUDA_VER=$(jq ".cuda.version" /usr/local/cuda/version.json 2>/dev/null)
+  elif [ -f /usr/local/cuda/version.txt ]; then
     CUDA_VER=$(cat /usr/local/cuda/version.txt | awk '{ print $3 }' 2> /dev/null)
     if [ $? -ne 0 ]; then
       CUDA_VER=0
@@ -315,7 +317,7 @@ install_cuda () {
       sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
       sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
       sudo apt-get update
-      sudo apt-get -y install cuda-toolkit-11-0
+      sudo apt-get -y install cuda-toolkit-11-2
     else
       curl https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin \
         -o cuda.pin
@@ -323,23 +325,23 @@ install_cuda () {
       sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
       sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
       sudo apt-get update
-      sudo apt-get -y install cuda-toolkit-11-0
+      sudo apt-get -y install cuda-toolkit-11-2
     fi
   else
     if [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel7" ]; then
       sudo yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
       sudo yum clean all
-      sudo yum install -y cuda-toolkit-11-0
+      sudo yum install -y cuda-toolkit-11-2
     else
       sudo dnf config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
       sudo dnf clean all
-      sudo dnf -y install cuda-toolkit-11-0
+      sudo dnf -y install cuda-toolkit-11-2
     fi
   fi
   set +e
 
   echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-  echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+  echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
   source ${HOME}/.bashrc
 
   nvlog "END Installing CUDA"
@@ -1344,7 +1346,7 @@ case "$1" in
     fi
     ENV_COMMAND=$(cat "${ENVFILE}")
     CMD=$(echo "docker run --rm ${PIN_CONTAINER} \
-      conda create --name snapper --override-channels \
+      micromamba create --name snapper --override-channels \
       ${ENV_COMMAND} --dry-run" | tr "\n" " " | tr -s [:space:] " ")
     nvlog "${CMD}"
     nvlog "This will take a while..."

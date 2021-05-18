@@ -1,7 +1,7 @@
 # Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 
 ARG DOCKER_REPO=nvcr.io/nvidia/cuda
-ARG CUDA_VERSION=11.0
+ARG CUDA_VERSION=11.2
 ARG OS_FLAVOR=devel-ubuntu20.04
 FROM ${DOCKER_REPO}:${CUDA_VERSION}-${OS_FLAVOR}
 
