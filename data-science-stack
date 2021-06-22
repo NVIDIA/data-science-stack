@@ -45,7 +45,7 @@ case $OS_FLAVOR$OS_RELEASE in
     ;;
 esac
 
-PIN_CONTAINER="mambaorg/micromamba:0.13.1"
+PIN_CONTAINER="frolvlad/alpine-miniconda3:python3.7"
 PIN_TMP="tmp.json"
 
 REBOOT=0
@@ -1346,7 +1346,7 @@ case "$1" in
     fi
     ENV_COMMAND=$(cat "${ENVFILE}")
     CMD=$(echo "docker run --rm ${PIN_CONTAINER} \
-      micromamba create --name snapper --override-channels \
+      conda create --name snapper --override-channels \
       ${ENV_COMMAND} --dry-run" | tr "\n" " " | tr -s [:space:] " ")
     nvlog "${CMD}"
     nvlog "This will take a while..."
