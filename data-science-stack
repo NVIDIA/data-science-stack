@@ -636,8 +636,7 @@ create_conda_env () {
     jupyter labextension install -y --clean \
       @jupyter-widgets/jupyterlab-manager \
       jupyter-threejs \
-      dask-labextension \
-      jupyterlab-nvdashboard
+      dask-labextension
 
   nvlog "END Setup Conda Env"
   nvlog "Next you can run: ${SCRIPT_NAME} run-jupyter"
