@@ -68,7 +68,7 @@ RUN ${CONDA_ROOT}/bin/conda env create -n data-science-stack-${STACK_VERSION} \
       jupyter labextension install -y --clean \
         @jupyter-widgets/jupyterlab-manager \
         jupyter-threejs \
-        dask-labextension \
+        dask-labextension' \
     && ${CONDA_ROOT}/bin/conda clean -afy \
     && find ${CONDA_ROOT} -follow -type f -name '*.pyc' -delete \
     && find ${CONDA_ROOT} -follow -type f -name '*.js.map' -delete
