@@ -1372,8 +1372,13 @@ case "$1" in
   run-notebook)
     if [ $# -ne 2 ]; then
       nvlog "Usage: ${SCRIPT_NAME} run-notebook <notebook-file>"
+    else
+      if [ ! -f "$2" ]; then
+        nvlog "Notebook $2 not found"
+      else
+       run_notebook $2
+      fi
     fi;
-    run_notebook $2
     ;;
 
   run-notebook-dir)
