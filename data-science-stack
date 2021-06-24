@@ -1376,7 +1376,11 @@ case "$1" in
       if [ ! -f "$2" ]; then
         nvlog "Notebook $2 not found"
       else
-       run_notebook $2
+       if [ $CONDA_VER != "0" ];then
+         run_notebook $2
+       else
+         nvlog "Conda not detected. Please run create-conda-env first"
+       fi
       fi
     fi;
     ;;
