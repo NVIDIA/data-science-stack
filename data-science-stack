@@ -286,7 +286,7 @@ EOF
 
 detect_cuda () {
   if [ -f /usr/local/cuda/version.json ]; then
-    CUDA_VER=$(jq ".cuda.version" /usr/local/cuda/version.json 2>/dev/null)
+    CUDA_VER=$(jq -r ".cuda.version" /usr/local/cuda/version.json 2>/dev/null)
   elif [ -f /usr/local/cuda/version.txt ]; then
     CUDA_VER=$(cat /usr/local/cuda/version.txt | awk '{ print $3 }' 2> /dev/null)
     if [ $? -ne 0 ]; then
