@@ -69,7 +69,7 @@ This creates and runs Jupyter in the container. Users can then connect
 with the Jupyter notebook running at <http://localhost:8888/>
 Control-C to exit.
 
-To mount data or code into your contianer, see
+To mount data or code into your container, see
 [How do I mount data into containers?](#How-do-i-mount-data-into-containers)
 below.
 
@@ -198,7 +198,7 @@ Customer Portal using Red Hat Subscription-Manager for further information -
 _Note: This functionality is alpha only until WSL v2 becomes production ready_
 
 Follow the [install instructions](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for WSL v2 with CUDA support.
-Then, create a a Ubuntu or RHEL VM, open a terminal, and follow OS-specific instructions above.
+Then, create a Ubuntu or RHEL VM, open a terminal, and follow OS-specific instructions above.
 
 ## Installing the NVIDIA GPU Driver
 
