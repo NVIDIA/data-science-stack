@@ -1,0 +1,28 @@
+description: object_detection_hp_search
+environment:
+  image: "determinedaicustomer/fasterrcnn-resnet50:pennfudan"
+data:
+  url: https://determined-ai-public-datasets.s3-us-west-2.amazonaws.com/PennFudanPed/PennFudanPed.zip
+entrypoint: model_def:ObjectDetectionModel
+hyperparameters:
+  global_batch_size: 4
+  learning_rate:
+    minval: 0.0005
+    maxval: 0.00075
+    type: double
+  momentum:
+    maxval: 0.85
+    minval: 0.75
+    type: double
+  weight_decay: 0.0005
+records_per_epoch: 136
+resources:
+  slots_per_trial: 1
+searcher:
+  max_length:
+    epochs: 1
+  max_trials: 64
+  max_concurrent_trials: 64
+  metric: val_avg_iou
+  name: adaptive_asha
+  smaller_is_better: false

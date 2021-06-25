@@ -3,11 +3,11 @@
 # Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 
 # Global Paramaters
-STACK_VERSION=2.8.0
-NOTEBOOKS_VERSION=0.18
+STACK_VERSION=2.9.0
+NOTEBOOKS_VERSION=21.06
 
-MIN_DRIVER=460.39
-MIN_CUDA=11.0.228
+MIN_DRIVER=465.27
+MIN_CUDA=11.2.152
 MIN_DOCKER=20.10.3
 MIN_CONDA=4.8.3
 
@@ -216,13 +216,13 @@ EOF
     sudo add-apt-repository -y ppa:graphics-drivers/ppa
     sudo apt-get -y update
     sudo apt-get -y upgrade
-    sudo apt-get -y install nvidia-driver-460
+    sudo apt-get -y install nvidia-driver-465
     sudo apt-get -y autoremove
     REBOOT=1
   elif [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel8" ]; then
     sudo dnf config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
     sudo dnf install -y kernel-devel-$(uname -r) kernel-headers-$(uname -r)
-    sudo dnf -y module install nvidia-driver:460-dkms
+    sudo dnf -y module install nvidia-driver:465-dkms
     # REBOOT not necessary
   else
     nvlog "Automated NVIDIA driver install on $OS_FLAVOR $OS_RELEASE_FULL is not supported."
@@ -285,7 +285,9 @@ EOF
 
 
 detect_cuda () {
-  if [ -f /usr/local/cuda/version.txt ]; then
+  if [ -f /usr/local/cuda/version.json ]; then
+    CUDA_VER=$(jq -r ".cuda.version" /usr/local/cuda/version.json 2>/dev/null)
+  elif [ -f /usr/local/cuda/version.txt ]; then
     CUDA_VER=$(cat /usr/local/cuda/version.txt | awk '{ print $3 }' 2> /dev/null)
     if [ $? -ne 0 ]; then
       CUDA_VER=0
@@ -315,7 +317,7 @@ install_cuda () {
       sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
       sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
       sudo apt-get update
-      sudo apt-get -y install cuda-toolkit-11-0
+      sudo apt-get -y install cuda-toolkit-11-2
     else
       curl https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin \
         -o cuda.pin
@@ -323,23 +325,23 @@ install_cuda () {
       sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
       sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
       sudo apt-get update
-      sudo apt-get -y install cuda-toolkit-11-0
+      sudo apt-get -y install cuda-toolkit-11-2
     fi
   else
     if [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel7" ]; then
       sudo yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
       sudo yum clean all
-      sudo yum install -y cuda-toolkit-11-0
+      sudo yum install -y cuda-toolkit-11-2
     else
       sudo dnf config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
       sudo dnf clean all
-      sudo dnf -y install cuda-toolkit-11-0
+      sudo dnf -y install cuda-toolkit-11-2
     fi
   fi
   set +e
 
   echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-  echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+  echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
   source ${HOME}/.bashrc
 
   nvlog "END Installing CUDA"
@@ -464,7 +466,8 @@ install_docker () {
 
     sudo yum install -y \
       docker-ce \
-      nvidia-container-toolkit
+      nvidia-container-toolkit \
+      iptables
     sudo systemctl enable docker
     if [ "$WSL" = true ] 
     then
@@ -633,8 +636,7 @@ create_conda_env () {
     jupyter labextension install -y --clean \
       @jupyter-widgets/jupyterlab-manager \
       jupyter-threejs \
-      dask-labextension \
-      jupyterlab-nvdashboard
+      dask-labextension
 
   nvlog "END Setup Conda Env"
   nvlog "Next you can run: ${SCRIPT_NAME} run-jupyter"
@@ -1370,8 +1372,17 @@ case "$1" in
   run-notebook)
     if [ $# -ne 2 ]; then
       nvlog "Usage: ${SCRIPT_NAME} run-notebook <notebook-file>"
+    else
+      if [ ! -f "$2" ]; then
+        nvlog "Notebook $2 not found"
+      else
+       if [ $CONDA_VER != "0" ];then
+         run_notebook $2
+       else
+         nvlog "Conda not detected. Please run create-conda-env first"
+       fi
+      fi
     fi;
-    run_notebook $2
     ;;
 
   run-notebook-dir)

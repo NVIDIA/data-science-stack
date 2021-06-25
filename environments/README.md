@@ -18,7 +18,7 @@ that library versions will change over time.
 
 ## Problems while pinning
 
-Satisfying the constraings in your .env file may not be possible, in which
+Satisfying the constraints in your .env file may not be possible, in which
 case the pin command will fail.
 
 To make this (very common) problem easier to solve, the command to generate
@@ -31,7 +31,7 @@ including what constraints cannot be satisfied.
 The file is part of the command used by the `data-science-stack` script to
 generate pinned configurations.
 The file should contain only the channels and packages, one per line.
-Packages with version restictions should have double quotes around them.
+Packages with version restrictions should have double quotes around them.
 
     -c channel-1
     -c channel-2
