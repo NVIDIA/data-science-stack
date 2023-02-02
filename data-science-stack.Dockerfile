@@ -40,7 +40,7 @@ ENV CONDA_ROOT=/conda
 ENV NOTEBOOKS_DIR=/notebooks
 
 RUN curl https://repo.anaconda.com/miniconda/Miniconda3-py37_${CONDA_VERSION}-Linux-x86_64.sh -k -o /miniconda.sh \
-    && sh /miniconda.sh -b -p ${CONDA_ROOT} \
+    && bash /miniconda.sh -b -p ${CONDA_ROOT} \
     && rm -f /miniconda.sh \
     && echo "conda ${CONDA_VERSION}" >> /conda/conda-meta/pinned \
     && ${CONDA_ROOT}/bin/conda init bash \
