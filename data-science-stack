@@ -9,7 +9,7 @@ NOTEBOOKS_VERSION=21.06
 MIN_DRIVER=525.78
 MIN_CUDA=11.2.152
 MIN_DOCKER=20.10.23
-MIN_CONDA=22.11.1
+MIN_CONDA=22.11.1-1
 
 SCRIPT_NAME=$(basename $0)
 RUNFROM=$(dirname $(readlink -f $0))
@@ -599,7 +599,7 @@ install_miniconda () {
 
   curl https://repo.anaconda.com/miniconda/Miniconda3-py37_$MIN_CONDA-Linux-x86_64.sh -o miniconda.sh
   chmod +x miniconda.sh
-  ./miniconda.sh -bf -p ${CONDA_ROOT}  # Use the existing Conda
+  /usr/bin/bash ./miniconda.sh -bf -p ${CONDA_ROOT}  # Use the existing Conda
   rm -f ./miniconda.sh
 
   echo "export PATH=${CONDA_ROOT}/bin:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
