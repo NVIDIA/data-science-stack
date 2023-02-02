@@ -33,8 +33,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -y --fix-missing \
 # Create Base environment
 
 ARG STACK_VERSION=2.10.0-dev
-ARG CONDA_VERSION=4.8.3
-ARG NOTEBOOKS_VERSION=21.06
+ARG CONDA_VERSION=22.11.1-1
+ARG NOTEBOOKS_VERSION=23.02
 
 ENV CONDA_ROOT=/conda
 ENV NOTEBOOKS_DIR=/notebooks
