@@ -37,7 +37,7 @@ OS_RELEASE=$VERSION_ID
 OS_RELEASE_MAJOR=${VERSION_ID%%.*} # extract major release, e.g. 1.2 -> 1, 1.2.3 -> 1
 
 case $OS_FLAVOR$OS_RELEASE in
-  ubuntu18.04 | ubuntu20.04 | rhel7* | rhel8* )
+  ubuntu18.04 | ubuntu20.04 | ubuntu22.04 | rhel7* | rhel8* )
     ;;
   *)
     echo "Unknown system type: $OS_FLAVOR $OS_RELEASE"
