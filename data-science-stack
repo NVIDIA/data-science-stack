@@ -317,31 +317,39 @@ install_cuda () {
       sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
       sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
       sudo apt-get update
-      sudo apt-get -y install cuda-toolkit-11-2
-    else
+      sudo apt-get -y install cuda-toolkit-11-5
+    elif [ $OS_RELEASE = "20.04" ]; then
       curl https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin \
         -o cuda.pin
       sudo mv cuda.pin /etc/apt/preferences.d/cuda-repository-pin-600
       sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
       sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
       sudo apt-get update
-      sudo apt-get -y install cuda-toolkit-11-2
+      sudo apt-get -y install cuda-toolkit-11-5
+    else
+      curl https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin \
+        -o cuda.pin
+      sudo mv cuda.pin /etc/apt/preferences.d/cuda-repository-pin-600
+      sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/7fa2af80.pub
+      sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/ /"
+      sudo apt-get update
+      sudo apt-get -y install cuda-toolkit-11-5
     fi
   else
     if [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel7" ]; then
       sudo yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
       sudo yum clean all
-      sudo yum install -y cuda-toolkit-11-2
+      sudo yum install -y cuda-toolkit-11-5
     else
       sudo dnf config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
       sudo dnf clean all
-      sudo dnf -y install cuda-toolkit-11-2
+      sudo dnf -y install cuda-toolkit-11-5
     fi
   fi
   set +e
 
   echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-  echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+  echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.5/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
   source ${HOME}/.bashrc
 
   nvlog "END Installing CUDA"
