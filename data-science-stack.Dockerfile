@@ -32,7 +32,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -y --fix-missing \
 
 # Create Base environment
 
-ARG STACK_VERSION=2.11.0-dev
+ARG STACK_VERSION=2.11.0
 ARG CONDA_VERSION=23.3.1-0
 ARG NOTEBOOKS_VERSION=23.02
 
