@@ -3,20 +3,20 @@
 # Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 
 # Global Paramaters
-STACK_VERSION=2.9.0
-NOTEBOOKS_VERSION=21.06
+STACK_VERSION=2.11.0
+NOTEBOOKS_VERSION=23.02
 
-MIN_DRIVER=465.27
-MIN_CUDA=11.2.152
-MIN_DOCKER=20.10.3
-MIN_CONDA=4.8.3
+MIN_DRIVER=530.30.02
+MIN_CUDA=12.1.0
+MIN_DOCKER=20.10.23
+MIN_CONDA=23.3.1-0
 
 SCRIPT_NAME=$(basename $0)
 RUNFROM=$(dirname $(readlink -f $0))
 DEFAULT_ENVIRONMENT="data-science-stack"
 LOGFILE=data-science-stack.log
 
-CONDA_ROOT=${HOME}/conda
+CONDA_ROOT=${HOME}/.conda
 DEFAULT_NOTEBOOKS_DIR=${HOME}/data-science-stack-${STACK_VERSION}
 NOTEBOOKS_DIR=${NOTEBOOKS_DIR:-$DEFAULT_NOTEBOOKS_DIR}
 
@@ -37,7 +37,7 @@ OS_RELEASE=$VERSION_ID
 OS_RELEASE_MAJOR=${VERSION_ID%%.*} # extract major release, e.g. 1.2 -> 1, 1.2.3 -> 1
 
 case $OS_FLAVOR$OS_RELEASE in
-  ubuntu18.04 | ubuntu20.04 | rhel7* | rhel8* )
+  ubuntu18.04 | ubuntu20.04 | ubuntu22.04 | rhel7* | rhel8* )
     ;;
   *)
     echo "Unknown system type: $OS_FLAVOR $OS_RELEASE"
@@ -212,14 +212,15 @@ EOF
   fi
 
   set -e
-  if [ $OS_FLAVOR = "ubuntu" ]; then
-    sudo add-apt-repository -y ppa:graphics-drivers/ppa
-    sudo apt-get -y update
-    sudo apt-get -y upgrade
-    sudo apt-get -y install nvidia-driver-465
-    sudo apt-get -y autoremove
-    REBOOT=1
-  elif [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel8" ]; then
+  #if [ $OS_FLAVOR = "ubuntu" ]; then NO LONGER NEEDED INSTALL_CUDA will load the driver
+   # sudo add-apt-repository -y ppa:graphics-drivers/ppa
+    #sudo apt-get -y update
+    #sudo apt-get -y upgrade
+    #sudo apt-get -y install nvidia-driver-525
+    #sudo apt-get -y autoremove
+    #REBOOT=1
+  #el
+  if [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel8" ]; then
     sudo dnf config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
     sudo dnf install -y kernel-devel-$(uname -r) kernel-headers-$(uname -r)
     sudo dnf -y module install nvidia-driver:465-dkms
@@ -311,37 +312,36 @@ install_cuda () {
   set -e
   if [ $OS_FLAVOR = "ubuntu" ]; then
     if [ $OS_RELEASE = "18.04" ]; then
-      curl https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin \
-        -o cuda.pin
-      sudo mv cuda.pin /etc/apt/preferences.d/cuda-repository-pin-600
-      sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
-      sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
+      wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-keyring_1.0-1_all.deb
+      sudo dpkg -i cuda-keyring_1.0-1_all.deb
       sudo apt-get update
-      sudo apt-get -y install cuda-toolkit-11-2
+      sudo apt-get -y install cuda
+    elif [ $OS_RELEASE = "20.04" ]; then
+      wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
+      sudo dpkg -i cuda-keyring_1.0-1_all.deb
+      sudo apt-get update
+      sudo apt-get -y install cuda
     else
-      curl https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin \
-        -o cuda.pin
-      sudo mv cuda.pin /etc/apt/preferences.d/cuda-repository-pin-600
-      sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
-      sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
+      wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb
+      sudo dpkg -i cuda-keyring_1.0-1_all.deb
       sudo apt-get update
-      sudo apt-get -y install cuda-toolkit-11-2
+      sudo apt-get -y install cuda
     fi
   else
     if [ $OS_FLAVOR$OS_RELEASE_MAJOR = "rhel7" ]; then
       sudo yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
       sudo yum clean all
-      sudo yum install -y cuda-toolkit-11-2
+      sudo yum install -y cuda-toolkit-11-7
     else
       sudo dnf config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
       sudo dnf clean all
-      sudo dnf -y install cuda-toolkit-11-2
+      sudo dnf -y install cuda-toolkit-11-7
     fi
   fi
   set +e
 
   echo "export PATH=/usr/local/cuda/bin/:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
-  echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
+  echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.7/lib64:/lib:\$LD_LIBRARY_PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
   source ${HOME}/.bashrc
 
   nvlog "END Installing CUDA"
@@ -573,6 +573,7 @@ detect_conda () {
 
 install_miniconda () {
   nvlog "START Install Miniconda"
+  nvlog "$CONDA_ROOT directory listing"
 
   semver_gte $CONDA_VER $MIN_CONDA
   if [ $? -eq 1 ]; then
@@ -596,10 +597,10 @@ install_miniconda () {
 
   set -e
   mkdir -p ${HOME}/.conda
-
-  curl https://repo.anaconda.com/miniconda/Miniconda3-py37_$MIN_CONDA-Linux-x86_64.sh -o miniconda.sh
+  
+  curl https://repo.anaconda.com/miniconda/Miniconda3-py310_$MIN_CONDA-Linux-x86_64.sh -o miniconda.sh
   chmod +x miniconda.sh
-  ./miniconda.sh -bf -p ${CONDA_ROOT}  # Use the existing Conda
+  /bin/bash ./miniconda.sh -bf -p ${CONDA_ROOT}  # Use the existing Conda
   rm -f ./miniconda.sh
 
   echo "export PATH=${CONDA_ROOT}/bin:\$PATH # DATA-SCIENCE-STACK-ADDED" >> ${HOME}/.bashrc
@@ -1225,7 +1226,7 @@ case "$1" in
     nvlog "Driver detected: $DRIVER_VER"
     nvlog "Docker detected: $DOCKER_VER"
     install_base
-    install_driver
+    install_cuda
     install_docker
     docker_adduser
     ;;
@@ -1246,7 +1247,6 @@ case "$1" in
   build-conda-env)
     ENVIRONMENT_NAME="${2:-$DEFAULT_ENVIRONMENT}"
     require_user
-    install_cuda
     install_miniconda
     create_conda_env
     install_notebooks
@@ -1309,6 +1309,7 @@ case "$1" in
     ;;
   install-miniconda)
     require_user
+    detect_conda
     install_miniconda
     ;;
   create-conda-env)
@@ -1344,8 +1345,7 @@ case "$1" in
       exit 1
     fi
     ENV_COMMAND=$(cat "${ENVFILE}")
-    CMD=$(echo "docker run --rm ${PIN_CONTAINER} \
-      conda create --name snapper --override-channels \
+    CMD=$(echo "conda create --name snapper \
       ${ENV_COMMAND} --dry-run" | tr "\n" " " | tr -s [:space:] " ")
     nvlog "${CMD}"
     nvlog "This will take a while..."
