@@ -1,8 +1,0 @@
-description: object-detection-demo-notebook
-resources:
-  slots: 0 # use CPU only; change to 1 to use 1 GPU, etc.
-environment:
-  image: "determinedaicustomer/fasterrcnn-resnet50:3.0"
-bind_mounts:
-  - host_path: /tmp/determined-checkpoint/
-    container_path: /tmp/determined-checkpoint/
