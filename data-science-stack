@@ -24,7 +24,7 @@ KAGGLE_DOCKER_IMAGE=gcr.io/kaggle-gpu-images/python
 AWS_DOCKER_IMAGE=amazon/aws-cli
 
 WSL=false
-_tmp=`uname -a | grep microsoft`
+_tmp=`uname -a | grep -i microsoft`
 if [ ! -z "$_tmp" ]
 then
   WSL=true
