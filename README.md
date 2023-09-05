@@ -32,7 +32,7 @@ _For usage and command documentation: `./data-science-stack help` at any time._
 _Note: The script is designed to run as the user, and ask for sudo password
 when needed. Do not run it with `sudo ...`
 
-On Ubuntu 18.04, 20.04, or Red Hat Enterprise Linux (RHEL) 8.x:
+On Ubuntu 22.04, 20.04, 18.04, or Red Hat Enterprise Linux (RHEL) 8.x:
 
 ```bash
 git clone https://github.com/NVIDIA/data-science-stack
@@ -40,7 +40,7 @@ cd data-science-stack
 ./data-science-stack setup-system
 ````
 
-On RHEL Workstation 7.x:
+On RHEL Workstation 8.x:
 
 ```bash
 git clone https://github.com/NVIDIA/data-science-stack
@@ -50,10 +50,10 @@ cd data-science-stack
 ./data-science-stack setup-system
 ```
 
-On Windows Subsystem for Linux (WSL):
-_Note: This functionality is alpha only (and containers only) until WSL v2 becomes production ready_
+On Windows Subsystem for Linux (WSL2):
+
 Follow the [install instructions](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) to install WSL v2 with CUDA support.
-Then, create a a Ubuntu or RHEL VM, open a terminal, and follow OS-specific instructions above.
+Then, create an Ubuntu or RHEL VM, open a terminal, and follow OS-specific instructions above. This can be accomplished running the 'wsl' cmd
 
 Next, users have a choice to use containers or a local Conda environment:
 
@@ -65,7 +65,7 @@ Next, users have a choice to use containers or a local Conda environment:
 ./data-science-stack run-container
 ```
 
-This creates and runs Jupyter in the container. Users can then connect
+This creates and runs Jupyterlab in the container. Users can then connect
 with the Jupyter notebook running at <http://localhost:8888/>
 Control-C to exit.
 
@@ -85,7 +85,7 @@ For information about Docker refer to <https://docs.docker.com/>
 ./data-science-stack run-jupyter
 ```
 
-This creates the local environment and runs Jupyter. Users can then connect
+This creates the local environment and runs Jupyterlab. Users can then connect
 with the Jupyter notebook at the address and token output by Jupyter.
 Control-C to exit.
 
@@ -141,7 +141,7 @@ since the notebooks can depend on functions only available when using
 Jupyter's web UI.
 
 ### Local Tools
-Version 2.7.0 introduced the `install-tools` command (paired with `purge-tools`), which extends the functionality of the stack. Currently, the list includes:
+DSS Version 2.7.0 introduced the `install-tools` command (paired with `purge-tools`), which extends the functionality of the stack. Currently, the list includes:
 * [jupyter-repo2docker](https://github.com/jupyterhub/repo2docker) Point it to a github repository and it will create a docker container, and launch a jupyter notebook inside it
 * [Nvidia GPU Cloud CLI](https://ngc.nvidia.com)  This is perhaps the easiest way to interact with Nvidia assets
 * [Kaggle CLI](https://github.com/Kaggle/kaggle-api) Allows users to sync up and manage Kaggle kernels, datasets, etc. locally
@@ -154,12 +154,12 @@ Creating custom environments is covered in the
 
 ## Minimum Hardware and Software
 
-* NVIDIA GPU - Pascal, Volta, or Turing family GPU(s) including:
-  * Quadro P, GV, and RTX series
-  * Tesla P, V and T series
-  * GeForce 10xx and 20xx
+* NVIDIA GPU - Turing, Ampere, ADA Lovelace family GPU(s) including:
+  * All RTX series
+  * Tesla T , A (A10, A100) , H (H100) and L (L4, L40S)series
+  * GeForce 30xx and 40xx
 * Operating System:
-  * Ubuntu 18.04 or 20.04
+  * Ubuntu 18.04, 20.04, or 22.04
   * Red Hat Enterprise Linux Workstation 7.5+ or 8.0+ (requires license)
   * Other Linux distributions are NOT supported, but may work as long as
     the driver and Docker work.
@@ -170,7 +170,7 @@ Disable "Secure Boot" in the system BIOS/UEFI before installing Linux.
 
 ### Ubuntu
 
-The Data Science stacks are supported on Ubuntu LTS 18.04.1+ or 20.04
+The Data Science stacks are supported on Ubuntu LTS 18.04.1+ , 20.04 or 22.04
 with the 4.15+ kernel. Ubuntu can be downloaded from
 <https://www.ubuntu.com/download/desktop>
 
@@ -195,9 +195,8 @@ Customer Portal using Red Hat Subscription-Manager for further information -
 <https://access.redhat.com/solutions/253273>
 
 ### Windows Subsystem for Linux (WSL v2)
-_Note: This functionality is alpha only (and containers only) until WSL v2 becomes production ready_
 
-Follow the [install instructions](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for WSL v2 with CUDA support.
+Follow the [install instructions](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for WIN11 WSL v2 with CUDA support.
 Then, create a Ubuntu or RHEL VM, open a terminal, and follow OS-specific instructions above.
 
 _Note: WSL v2 currently requires CUDA 11.0, while data science stack 2.9.0 is based on CUDA 11.2. Therefore, WSL v2 is supported via containers only.
